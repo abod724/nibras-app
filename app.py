@@ -14,16 +14,16 @@ st.set_page_config(
 # -------------------------- قراءة المفتاح الآمنة --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
-    st.error("⚠️ المفتاح غير مضاف في الإعدادات")
+    st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- تصميم الواجهة حسب طلبك --------------------------
+# -------------------------- تصميم واجهة احترافية ونظيفة --------------------------
 st.markdown("""
 <style>
-* {direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif;}
-.stApp {background: #f8fafc; color: #1e293b;}
+* {direction: rtl; text-align: right; font-family: 'Segoe UI', 'Cairo', Tahoma, sans-serif;}
+.stApp {background: #f0f4f8; color: #1e293b;}
 #MainMenu, footer, header {visibility: hidden;}
 
 /* شريط الأعلى */
@@ -33,73 +33,89 @@ st.markdown("""
     left: 0;
     right: 0;
     background: white;
-    padding: 12px 20px;
+    padding: 14px 25px;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
-.top-left {display: flex; gap: 10px; align-items: center;}
-.top-center h1 {margin: 0; font-size: 28px; color: #165DFF;}
+.top-left {display: flex; gap: 12px; align-items: center;}
+.top-center h1 {margin: 0; font-size: 30px; font-weight: 700; color: #2563eb;}
 
 /* منطقة المحادثة */
 .chat-area {
     max-width: 900px;
-    margin: 70px auto 120px;
-    padding: 20px;
+    margin: 80px auto 130px;
+    padding: 20px 15px;
 }
 .msg {
-    padding: 14px 18px;
-    margin: 12px 0;
-    border-radius: 20px;
-    max-width: 80%;
-    line-height: 1.6;
+    padding: 16px 20px;
+    margin: 14px 0;
+    border-radius: 22px;
+    max-width: 85%;
+    line-height: 1.7;
+    font-size: 16px;
 }
-.user {background: #165DFF; color: white; margin-left: auto; border-bottom-right-radius: 6px;}
-.bot {background: white; border: 1px solid #e2e8f0; margin-right: auto; border-bottom-left-radius: 6px;}
+.user {
+    background: #2563eb;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 6px;
+}
+.bot {
+    background: white;
+    border: 1px solid #e2e8f0;
+    margin-right: auto;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
 
-/* مربع الكتابة الدائري */
+/* مربع الكتابة الدائري العصري */
 .input-box {
     position: fixed;
-    bottom: 20px;
+    bottom: 25px;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
+    width: 92%;
     max-width: 900px;
     background: white;
     border-radius: 50px;
-    padding: 12px 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    padding: 15px 25px;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.1);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
     z-index: 999;
 }
 .input-box input {
     flex: 1;
     border: none;
     outline: none;
-    font-size: 16px;
-    padding: 8px;
+    font-size: 17px;
+    padding: 10px;
+    background: transparent;
 }
 .circle-btn {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 20px;
+    transition: all 0.2s ease;
 }
-.voice-btn {background: #10B981; color: white;}
-.send-btn {background: #165DFF; color: white;}
+.circle-btn:hover {transform: scale(1.05);}
+.voice-btn {background: #10b981; color: white;}
+.send-btn {background: #2563eb; color: white;}
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- شريط الأعلى --------------------------
+# -------------------------- شريط التحكم الأعلى --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1,2,1])
 with col1:
@@ -119,13 +135,14 @@ with col3:
                     st.session_state.chat_history = c["messages"]
                     st.rerun()
         else:
-            st.info("لا توجد محادثات سابقة")
+            st.info("لا توجد محادثات سابقة متوفرة")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- سجل المحادثة --------------------------
+# -------------------------- إدارة سجل المحادثة --------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [{"role": "assistant", "content": "تحدث مع نبراس"}]
 
+# عرض المحادثة
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
 for msg in st.session_state.chat_history:
     if msg["role"] == "user":
@@ -134,53 +151,79 @@ for msg in st.session_state.chat_history:
         st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- مربع الكتابة الدائري --------------------------
+# -------------------------- مربع الكتابة مع منع التكرار --------------------------
 st.markdown('<div class="input-box">', unsafe_allow_html=True)
 voice_input = st.audio_input("🎤", label_visibility="collapsed")
-user_input = st.text_input("", placeholder="اكتب هنا...", label_visibility="collapsed")
-send = st.button("📤", type="primary")
+
+# حل مشكلة التكرار: نستخدم متغير مؤقت
+if "temp_input" not in st.session_state:
+    st.session_state.temp_input = ""
+
+user_input = st.text_input(
+    "", 
+    placeholder="اكتب سؤالك هنا أو تحدث بصوتك...", 
+    label_visibility="collapsed",
+    value=st.session_state.temp_input,
+    key="user_input_field"
+)
+send = st.button("📤", type="primary", key="send_button")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- معالجة الصوت --------------------------
+# -------------------------- معالجة الإدخال الصوتي --------------------------
 if voice_input:
-    with st.spinner("جاري تحويل الصوت..."):
+    with st.spinner("جاري تحويل صوتك..."):
         try:
             res = client.audio.transcriptions.create(model="whisper-1", file=voice_input, language="ar")
-            user_input = res.text
+            st.session_state.temp_input = res.text
+            st.rerun()
         except Exception as e:
-            st.error(f"خطأ: {str(e)}")
+            st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
 
-# -------------------------- إرسال السؤال وجلب الرد --------------------------
-if (send or user_input) and user_input.strip():
+# -------------------------- إرسال السؤال وجلب رد احترافي --------------------------
+if send and user_input.strip():
+    # إضافة السؤال للسجل
     st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
     
-    with st.spinner("نبراس يفكر..."):
+    with st.spinner("نبراس يجهز الرد..."):
         try:
+            # تعليمات متطورة لرفع مستوى الردود
+            system_prompt = """
+            أنت **نبراس**، مساعد ذكي احترافي ومتكامل.
+            📌 القواعد الأساسية:
+            1. أجب بذكاء ووضوح، بإيجاز مناسب ولا تطيل بلا فائدة، وقدم معلومات دقيقة ومفيدة.
+            2. لا تقل لي أذهب لمصادر خارجية، أجب بنفسك دائماً وبكل ثقة.
+            3. إذا سألتك عن اسمك قل: اسمي نبراس، مساعدك الذكي الخاص.
+            4. استخدم لغة عربية فصحى بسيطة وجذابة، وكن ودوداً ومتجاوباً.
+            5. اربط ردك بسياق المحادثة السابقة، وقدم إجابات منطقية ومتكاملة.
+            """
+
+            # طلب الرد بدقة عالية
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "أنت نبراس، أجب بإيجاز شديد، لا تطل الكلام، لا توجه لمصادر خارجية، تحدث بالعربية الواضحة."},
-                    *st.session_state.chat_history
-                ],
-                temperature=0.4,
-                max_tokens=300
+                model="gpt-3.5-turbo-1106",
+                messages=[{"role": "system", "content": system_prompt}, *st.session_state.chat_history],
+                temperature=0.6,
+                max_tokens=500,
+                top_p=0.9
             )
             answer = response.choices[0].message.content
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-            # حفظ المحادثة السابقة
+            # حفظ المحادثة في السجل السابق
             if "all_chats" not in st.session_state:
                 st.session_state.all_chats = []
             st.session_state.all_chats.append({
-                "date": datetime.now().strftime("%H:%M"),
+                "date": datetime.now().strftime("%H:%M - %d/%m"),
                 "messages": st.session_state.chat_history.copy()
             })
 
-            # تحويل الرد لصوت
-            speech = client.audio.speech.create(model="tts-1", voice="alloy", input=answer)
+            # تشغيل الرد الصوتي
+            speech = client.audio.speech.create(model="tts-1", voice="alloy", input=answer, response_format="mp3")
             audio_b64 = base64.b64encode(speech.content).decode("utf-8")
             st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
 
+            # مسح الحقل لمنع التكرار نهائياً
+            st.session_state.temp_input = ""
             st.rerun()
+
         except Exception as e:
-            st.error(f"خطأ: {str(e)}")
+            st.error(f"❌ حدث خطأ: {str(e)}")
