@@ -1,6 +1,5 @@
 import streamlit as st
 from openai import OpenAI
-import base64
 
 # ---------------- إعداد الصفحة ----------------
 st.set_page_config(
@@ -10,86 +9,96 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- قراءة المفتاح ----------------
+# ---------------- المفتاح ----------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
+
 if not API_KEY:
-    st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
+    st.error("⚠️ لم يتم العثور على مفتاح OpenAI في Secrets.")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
-# ---------------- تصميم الواجهة ----------------
+
+# ---------------- التصميم ----------------
 st.markdown("""
 <style>
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
 header {visibility:hidden;}
 
-.stApp{
-    background:#ffffff;
+.stApp {
+    background: white;
 }
 
-.title{
+.title {
     text-align:center;
-    font-size:38px;
+    font-size:42px;
     font-weight:bold;
-    margin-top:15px;
     color:#111827;
+    margin-top:15px;
 }
 
-.sub{
+.sub {
     text-align:center;
     color:#6b7280;
     margin-bottom:25px;
 }
 
-.msg{
+[data-testid="stChatInput"]{
+    max-width:750px;
+    margin:auto;
+}
+
+[data-testid="stChatInput"] textarea{
+    border-radius:30px !important;
+    min-height:55px !important;
+    max-height:55px !important;
+    border:1px solid #d1d5db !important;
+}
+
+section[data-testid="stSidebar"]{
     background:#f8fafc;
-    border:1px solid #e5e7eb;
-    border-radius:18px;
-    padding:15px;
-    margin-bottom:12px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="title">نبراس</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub">تحدث مع نبراس</div>', unsafe_allow_html=True)
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
+# ---------------- الشريط الجانبي ----------------
 with st.sidebar:
-    st.title("☰ نبراس")
+    st.title("نبراس")
+
     if st.button("✏️ محادثة جديدة"):
         st.session_state.messages = []
         st.rerun()
 
-for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+# ---------------- العنوان ----------------
+st.markdown(
+    '<div class="title">نبراس</div>',
+    unsafe_allow_html=True
+)
 
-audio = st.audio_input("🎤")
+st.markdown(
+    '<div class="sub">مساعدك الذكي</div>',
+    unsafe_allow_html=True
+)
 
-voice_text = ""
-if audio:
-    try:
-        result = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio,
-            language="ar"
-        )
-        voice_text = result.text
-    except:
-        st.error("تعذر تحويل الصوت.")
+# ---------------- المحادثات ----------------
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-prompt = st.chat_input("تحدث مع نبراس")
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if voice_text:
-    prompt = voice_text
+# ---------------- الإدخال ----------------
+prompt = st.chat_input("اسأل نبراس...")
 
+# ---------------- إرسال الرسالة ----------------
 if prompt:
+
     st.session_state.messages.append(
-        {"role": "user", "content": prompt}
+        {
+            "role": "user",
+            "content": prompt
+        }
     )
 
     messages = [
@@ -105,8 +114,9 @@ if prompt:
 - الأسئلة العامة.
 
 أجب باختصار.
-لا تكتب ردوداً طويلة إلا إذا طلب المستخدم التفصيل.
 كن مؤدباً دائماً.
+لا تستخدم العنصرية أو التعصب.
+إذا لم تعرف معلومة فقل: لا أملك معلومات مؤكدة حالياً.
 إذا سئلت عن اسمك فقل: اسمي نبراس.
 """
         }
@@ -114,38 +124,21 @@ if prompt:
 
     messages.extend(st.session_state.messages)
 
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=messages,
-        max_completion_tokens=180
-    )
+    with st.spinner("يفكر نبراس..."):
 
-    answer = response.choices[0].message.content
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=messages,
+            max_completion_tokens=150
+        )
+
+        answer = response.choices[0].message.content
 
     st.session_state.messages.append(
-        {"role": "assistant", "content": answer}
+        {
+            "role": "assistant",
+            "content": answer
+        }
     )
 
     st.rerun()
-
-if st.session_state.messages:
-    last = st.session_state.messages[-1]
-
-    if last["role"] == "assistant":
-        try:
-            speech = client.audio.speech.create(
-                model="tts-1",
-                voice="alloy",
-                input=last["content"],
-                response_format="mp3"
-            )
-
-            audio_b64 = base64.b64encode(
-                speech.content
-            ).decode()
-
-            st.audio(
-                f"data:audio/mp3;base64,{audio_b64}"
-            )
-        except:
-            pass
