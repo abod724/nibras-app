@@ -80,14 +80,24 @@ for msg in st.session_state.chat_history:
     else: st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- مربع الكتابة النظيف --------------------------
-if "input_text" not in st.session_state: st.session_state.input_text = ""
+# -------------------------- مربع الكتابة (نظيف تماماً) --------------------------
+# مسح مؤقت الإدخال عند كل تحميل لضمان النظافة
+if "input_text" in st.session_state:
+    del st.session_state.input_text
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
 
 st.markdown('<div class="input-box">', unsafe_allow_html=True)
 voice_input = st.audio_input("🎤", label_visibility="collapsed")
+
+# مربع كتابة عربي فقط، بدون أي نص غريب
 user_input = st.text_input(
-    "", placeholder="اكتب سؤالك هنا...", label_visibility="collapsed",
-    key="fixed_input", value=st.session_state.input_text
+    "",
+    placeholder="اكتب سؤالك هنا...",
+    label_visibility="collapsed",
+    key="clean_input",
+    value=st.session_state.input_text,
+    help="اكتب سؤالك هنا"
 )
 send_btn = st.button("📤", type="primary")
 st.markdown('</div>', unsafe_allow_html=True)
@@ -101,30 +111,31 @@ if voice_input:
             st.rerun()
         except Exception as e: st.error(f"خطأ: {str(e)}")
 
-# -------------------------- إرسال السؤال والرد الذكي --------------------------
+# -------------------------- إرسال السؤال والمعلومات الحديثة --------------------------
 if send_btn and user_input.strip():
     st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
     
     with st.spinner("نبراس يجهز الرد..."):
         try:
-            # 📌 تعليمات شاملة وقوية تحل كل مشاكلك
+            # 📌 تعليمات محدثة بمعلومات حديثة ومنع المشاكل
             system_prompt = """
-            أنت **نبراس**، مساعد ذكي شامل ومتمكن. اتبع هذه القواعد بدقة تامة:
-            1. لا تقل أبداً «اذهب لجوجل» أو «راجع المصادر» أو «تحقق من الخرائط» — أجب بنفسك دائماً بكل ما تملك من معلومات دقيقة.
-            2. أجب بإيجاز تام ومباشر، ولا تطل الكلام، لكن اجعل ردك **وافياً وكاملاً** يغطي كل جوانب السؤال.
-            3. تمتلك معلومات كاملة عن: الطقس العام، نتائج بطولات كأس العالم عبر التاريخ، الدول والمدن، الرياضة، العلوم، التقنية، والمعلومات العامة الموثوقة.
-            4. إذا كان السؤال عن بيانات لحظية حالية (مثل طقس اليوم بالضبط)، اذكر ذلك بوضوح وقدم التقديرات الدقيقة المتاحة لك، ولا تُحول لموقع خارجي.
-            5. لا تكرر الكلام ولا تردد نفس الجملة، ولا تعلق، وكن سلساً ومتجاوباً.
+            أنت **نبراس**، مساعد ذكي بمعلومات حديثة حتى عام 2026. اتبع هذه القواعد بدقة تامة:
+            1. لا تقل أبداً «اذهب لجوجل» أو «راجع المصادر» أو «تحقق من الخرائط» — أجب بنفسك دائماً.
+            2. أجب بإيجاز ووضوح، قصير ووافٍ، لا تطيل ولا تكرر الكلام أبداً.
+            3. معلومات كأس العالم:
+               - آخر بطولة كأس العالم كانت قطر 2022، وفازت بها الأرجنتين.
+               - بطولة كأس العالم القادمة 2026 ستقام في الولايات المتحدة وكندا والمكسيك.
+               - البطولات السابقة: روسيا 2018 فازت فرنسا، البرازيل 2014 فازت ألمانيا، إلخ.
+            4. معلومات الطقس: قدم الوصف العام والمعلومات الموثوقة، واذكر أن التفاصيل اللحظية تتغير يومياً.
+            5. لا توجد أي معلومات إنجليزية في ردودك، تحدث بالعربية فقط.
             6. إذا سألت عن اسمك قل: اسمي نبراس، مساعدك الذكي الخاص.
-            7. تحدث باللغة العربية البسيطة والواضحة فقط.
             """
 
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo-1106",
                 messages=[{"role": "system", "content": system_prompt}, *st.session_state.chat_history],
                 temperature=0.4,
-                max_tokens=350,
-                top_p=0.9
+                max_tokens=350
             )
             answer = response.choices[0].message.content
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
@@ -141,7 +152,7 @@ if send_btn and user_input.strip():
             audio_b64 = base64.b64encode(speech.content).decode("utf-8")
             st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
 
-            # مسح الحقل تلقائياً
+            # ✅ مسح كلي لمربع الكتابة نهائياً
             st.session_state.input_text = ""
             st.rerun()
 
