@@ -1,55 +1,229 @@
 import streamlit as st
 from openai import OpenAI
-import streamlit as st
-from openai import OpenAI
-from dotenv import load_dotenv
-import os
+import base64
+from datetime import datetime
 
-load_dotenv()
-API_KEY = os.getenv("OPENAI_API_KEY")
-# إعدادات ثابتة
-st.set_page_config(page_title="نبراس", page_icon="💬", layout="centered", initial_sidebar_state="collapsed")
+# -------------------------- إعدادات الصفحة --------------------------
+st.set_page_config(
+    page_title="نبراس",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# واجهة ثابتة ومريحة
-st.markdown("""
-<style>
-* {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;}
-#MainMenu, footer, header {display: none !important;}
-.stApp {background: #f7f9fc; max-width: 850px; margin: 0 auto; padding: 20px;}
-h1 {color: #2563eb; text-align: center;}
-.msg {padding: 14px 18px; margin: 10px 0; border-radius: 16px; line-height: 1.6;}
-.user {background: #2563eb; color: white; margin-left: auto; max-width: 80%;}
-.bot {background: white; border: 1px solid #e2e8f0; margin-right: auto; max-width: 80%;}
-</style>
-""", unsafe_allow_html=True)
-
-# ✅ الكود يجلب المفتاح تلقائياً من المكان الآمن
+# -------------------------- قراءة المفتاح الآمنة --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
-
 if not API_KEY:
-    st.error("⚠️ المفتاح غير مضاف بعد! اذهب للإعدادات ← المفاتيح السرية وأضف: OPENAI_API_KEY")
+    st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
 
-# المحتوى
-st.title("💬 نبراس — مساعدك الذكي")
+# -------------------------- تصميم واجهة احترافية ونظيفة --------------------------
+st.markdown("""
+<style>
+* {direction: rtl; text-align: right; font-family: 'Segoe UI', 'Cairo', Tahoma, sans-serif;}
+.stApp {background: #f0f4f8; color: #1e293b;}
+#MainMenu, footer, header {visibility: hidden;}
 
-if "chat" not in st.session_state:
-    st.session_state.chat = [{"role":"assistant", "content":"أهلاً وسهلاً! أنا نبراس، اسألني أي شيء وسأجيبك دائماً."}]
+/* شريط الأعلى */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 14px 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.top-left {display: flex; gap: 12px; align-items: center;}
+.top-center h1 {margin: 0; font-size: 30px; font-weight: 700; color: #2563eb;}
 
-for msg in st.session_state.chat:
-    st.markdown(f'<div class="msg {msg["role"]}">{msg["content"]}</div>', unsafe_allow_html=True)
+/* منطقة المحادثة */
+.chat-area {
+    max-width: 900px;
+    margin: 80px auto 130px;
+    padding: 20px 15px;
+}
+.msg {
+    padding: 16px 20px;
+    margin: 14px 0;
+    border-radius: 22px;
+    max-width: 85%;
+    line-height: 1.7;
+    font-size: 16px;
+}
+.user {
+    background: #2563eb;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 6px;
+}
+.bot {
+    background: white;
+    border: 1px solid #e2e8f0;
+    margin-right: auto;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
 
-سؤال = st.text_input("", placeholder="اكتب سؤالك هنا...", label_visibility="collapsed")
-if st.button("إرسال") and سؤال.strip():
-    st.session_state.chat.append({"role":"user", "content":سؤال.strip()})
-    with st.spinner("أجيبك..."):
-        رد = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role":"system","content":"أنت نبراس، أجب بالعربية بوضوح، لا تقل لا أعرف، تغطي كل المجالات."}, *st.session_state.chat],
-            temperature=0.7,
-            max_tokens=400
-        )
-        st.session_state.chat.append({"role":"assistant", "content":رد.choices[0].message.content})
-    st.rerun()
+/* مربع الكتابة الدائري العصري */
+.input-box {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 900px;
+    background: white;
+    border-radius: 50px;
+    padding: 15px 25px;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 999;
+}
+.input-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 17px;
+    padding: 10px;
+    background: transparent;
+}
+.circle-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s ease;
+}
+.circle-btn:hover {transform: scale(1.05);}
+.voice-btn {background: #10b981; color: white;}
+.send-btn {background: #2563eb; color: white;}
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------- شريط التحكم الأعلى --------------------------
+st.markdown('<div class="top-bar">', unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1,2,1])
+with col1:
+    if st.button("✏️ جديد", help="بدء محادثة جديدة"):
+        st.session_state.chat_history = [{"role": "assistant", "content": "تحدث مع نبراس"}]
+        st.rerun()
+    st.button("⋮⋮⋮", help="خيارات إضافية")
+with col2:
+    st.markdown("<h1>نبراس</h1>", unsafe_allow_html=True)
+with col3:
+    with st.popover("📋 المحادثات السابقة"):
+        if "all_chats" not in st.session_state:
+            st.session_state.all_chats = []
+        if st.session_state.all_chats:
+            for i, c in enumerate(st.session_state.all_chats):
+                if st.button(f"محادثة {i+1} - {c['date']}", use_container_width=True):
+                    st.session_state.chat_history = c["messages"]
+                    st.rerun()
+        else:
+            st.info("لا توجد محادثات سابقة متوفرة")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------- إدارة سجل المحادثة --------------------------
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [{"role": "assistant", "content": "تحدث مع نبراس"}]
+
+# عرض المحادثة
+st.markdown('<div class="chat-area">', unsafe_allow_html=True)
+for msg in st.session_state.chat_history:
+    if msg["role"] == "user":
+        st.markdown(f'<div class="msg user">{msg["content"]}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------- مربع الكتابة مع منع التكرار --------------------------
+st.markdown('<div class="input-box">', unsafe_allow_html=True)
+voice_input = st.audio_input("🎤", label_visibility="collapsed")
+
+# حل مشكلة التكرار: نستخدم متغير مؤقت
+if "temp_input" not in st.session_state:
+    st.session_state.temp_input = ""
+
+user_input = st.text_input(
+    "", 
+    placeholder="اكتب سؤالك هنا أو تحدث بصوتك...", 
+    label_visibility="collapsed",
+    value=st.session_state.temp_input,
+    key="user_input_field"
+)
+send = st.button("📤", type="primary", key="send_button")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------- معالجة الإدخال الصوتي --------------------------
+if voice_input:
+    with st.spinner("جاري تحويل صوتك..."):
+        try:
+            res = client.audio.transcriptions.create(model="whisper-1", file=voice_input, language="ar")
+            st.session_state.temp_input = res.text
+            st.rerun()
+        except Exception as e:
+            st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
+
+# -------------------------- إرسال السؤال وجلب رد احترافي --------------------------
+if send and user_input.strip():
+    # إضافة السؤال للسجل
+    st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
+    
+    with st.spinner("نبراس يجهز الرد..."):
+        try:
+            # تعليمات متطورة لرفع مستوى الردود
+            system_prompt = """
+            أنت **نبراس**، مساعد ذكي احترافي ومتكامل.
+            📌 القواعد الأساسية:
+            1. أجب بذكاء ووضوح، بإيجاز مناسب ولا تطيل بلا فائدة، وقدم معلومات دقيقة ومفيدة.
+            2. لا تقل لي أذهب لمصادر خارجية، أجب بنفسك دائماً وبكل ثقة.
+            3. إذا سألتك عن اسمك قل: اسمي نبراس، مساعدك الذكي الخاص.
+            4. استخدم لغة عربية فصحى بسيطة وجذابة، وكن ودوداً ومتجاوباً.
+            5. اربط ردك بسياق المحادثة السابقة، وقدم إجابات منطقية ومتكاملة.
+            """
+
+            # طلب الرد بدقة عالية
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo-1106",
+                messages=[{"role": "system", "content": system_prompt}, *st.session_state.chat_history],
+                temperature=0.6,
+                max_tokens=500,
+                top_p=0.9
+            )
+            answer = response.choices[0].message.content
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+            # حفظ المحادثة في السجل السابق
+            if "all_chats" not in st.session_state:
+                st.session_state.all_chats = []
+            st.session_state.all_chats.append({
+                "date": datetime.now().strftime("%H:%M - %d/%m"),
+                "messages": st.session_state.chat_history.copy()
+            })
+
+            # تشغيل الرد الصوتي
+            speech = client.audio.speech.create(model="tts-1", voice="alloy", input=answer, response_format="mp3")
+            audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+            st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+
+            # مسح الحقل لمنع التكرار نهائياً
+            st.session_state.temp_input = ""
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"❌ حدث خطأ: {str(e)}")
