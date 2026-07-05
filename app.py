@@ -260,6 +260,7 @@ voice_input = st.audio_input("سجل صوتك هنا", label_visibility="collaps
 user_input = st.chat_input("اكتب سؤالك هنا...")
 
 # -------------------------- معالجة الإدخال الصوتي --------------------------
+# 🎙️ معالجة الصوت وتحويله لنص
 if voice_input:
     with st.spinner("جاري تحويل صوتك إلى نص..."):
         try:
@@ -268,8 +269,8 @@ if voice_input:
                 file=voice_input,
                 language="ar"
             )
-            st.session_state.temp_input = res.text
-            st.rerun()
+            user_input = res.text
+            st.success(f"✅ تم تحويل الصوت: {user_input}")
         except Exception as e:
             st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
 
