@@ -14,12 +14,26 @@ st.set_page_config(
 
 # -------------------------- قراءة المفتاح الآمنة --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
+SERPAPI_API_KEY = st.secrets["SERPAPI_API_KEY"]
 if not API_KEY:
     st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
-
+# دالة البحث في جوجل
+def search_google(query):
+    params = {
+        "engine": "google",
+        "q": query,
+        "api_key": SERPAPI_API_KEY
+    }
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    
+    # استخراج أول رابط أو وصف ليعرف المساعد المعلومة
+    if "organic_results" in results:
+        return results["organic_results"][0].get("snippet", "لا يوجد وصف")
+    return "لم أجد نتائج."
 # -------------------------- تصميم واجهة فاخرة (أسود + ذهبي + أزرق) --------------------------
 st.markdown("""
 <style>
