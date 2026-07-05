@@ -174,17 +174,36 @@ st.markdown("""
 .voice-btn {
     background: radial-gradient(circle at top, #22c55e 0%, #16a34a 60%);
     color: white;
-}
-.send-btn {
-    background: radial-gradient(circle at top, #facc15 0%, #f97316 60%);
-    color: #0b1120;
-}
-.stPopover {
-    background: #020617 !important;
-    border-radius: 18px !important;
-    border: 1px solid rgba(148,163,184,0.6) !important;
-}
-</style>
+from serpapi import GoogleSearch # تأكد من وجود هذا في الأعلى
+
+# ... (داخل دالة الإرسال) ...
+if send and user_input.strip():
+    query = user_input.strip()
+    st.session_state.chat_history.append({"role": "user", "content": query})
+
+    with st.spinner("نبراس يبحث ويجهز لك ردًا فاخرًا..."):
+        try:
+            # 1. البحث أولاً
+            search_results = search_google(query)
+            
+            # 2. إرسال النتيجة مع السؤال لـ OpenAI
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"{system_prompt}\nمعلومات بحثية حديثة يمكنك استخدامها: {search_results}"},
+                    *st.session_state.chat_history
+                ]
+            )
+
+            answer = response.choices[0].message.content
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            
+            # ... (باقي الكود الخاص بحفظ المحادثة والصوت كما هو) ...
+            st.session_state.temp_input = ""
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"❌ حدث خطأ في الاتصال: {str(e)}")
 """, unsafe_allow_html=True)
 
 # -------------------------- شريط التحكم الأعلى --------------------------
