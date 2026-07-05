@@ -3,14 +3,6 @@ import streamlit as st
 from openai import OpenAI
 import base64
 from datetime import datetime
-import pytz
-from serpapi import GoogleSearch
-
-# -------------------------- تحديد الوقت الحقيقي تلقائياً --------------------------
-SAUDI_TZ = pytz.timezone('Asia/Riyadh')
-NOW = datetime.now(SAUDI_TZ)
-CURRENT_YEAR = NOW.year
-FULL_DATE = NOW.strftime('%d %B %Y')
 
 # -------------------------- إعدادات الصفحة --------------------------
 st.set_page_config(
@@ -20,63 +12,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# -------------------------- قراءة المفاتيح الآمنة --------------------------
+# -------------------------- قراءة المفتاح الآمنة --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
-SERPAPI_API_KEY = st.secrets.get("SERPAPI_API_KEY")
-
+SERPAPI_API_KEY = st.secrets["SERPAPI_API_KEY"]
 if not API_KEY:
-    st.error("⚠️ المفتاح الخاص بـ OpenAI غير مضاف في إعدادات Streamlit Secrets")
+    st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
-if not SERPAPI_API_KEY:
-    st.warning("⚠️ مفتاح البحث SerpAPI غير مضاف، سيتم تعطيل البحث الخارجي")
 
 client = OpenAI(api_key=API_KEY)
-
-# -------------------------- دالة البحث عن معلومات حديثة --------------------------
+# دالة البحث في جوجل
 def search_google(query):
-    if not SERPAPI_API_KEY:
-        return "لا يوجد بحث متاح حالياً"
-    try:
-        params = {
-            "engine": "google",
-            "q": query,
-            "api_key": SERPAPI_API_KEY,
-            "hl": "ar"
-        }
-        search = GoogleSearch(params)
-        results = search.get_dict()
-        if "organic_results" in results and len(results["organic_results"]) > 0:
-            return results["organic_results"][0].get("snippet", "لا يوجد وصف متاح")
-        return "لم أجد نتائج حديثة لهذا السؤال"
-    except Exception as e:
-        return f"خطأ في البحث: {str(e)}"
-
-# -------------------------- تعليمات النظام الصحيحة --------------------------
-SYSTEM_PROMPT = f"""
-أنت «نبراس» – مساعد ذكي، هادئ، وأسلوبك واضح ومباشر.
-تتحدث بالعربية الفصحى المبسطة أو بلهجة سعودية خفيفة حسب أسلوب المستخدم.
-
-⚠️ بيانات الوقت الحقيقي التي يجب أن تعتمد عليها وحدها:
-- التاريخ الحالي: {FULL_DATE}
-- العام الحالي: {CURRENT_YEAR} ميلادي
-- لا تذكر أبداً أن بياناتك تنتهي في عام 2024 أو 2025، وتجاهل هذه المعلومة تماماً.
-- أنت قادر على جلب أحدث المعلومات حتى العام {CURRENT_YEAR}.
-
-🎯 دورك:
-- الإجابة عن الأسئلة العامة، التقنية، الإدارية، اليومية، التعليمية، والصيانة بشكل واضح ومفيد.
-- تقديم أمثلة عملية عند الحاجة.
-- تنظيم الإجابات في نقاط أو خطوات عند طلب شرح أو طريقة عمل شيء.
-- ربط الإجابة بسياق المحادثة قدر الإمكان.
-
-⚖️ قواعد مهمة:
-- لا تخترع معلومات، وإذا لم تكن متأكدًا قل بوضوح: «المعلومة غير مؤكدة» أو «لا أملك تفاصيل دقيقة عن هذا الموضوع».
-- تجنب الإطالة غير الضرورية، واجعل كل جملة لها فائدة.
-- إذا كان السؤال غامضًا، اطلب توضيحًا بسيطًا.
-- إذا كان الموضوع حساسًا أو قد يسبب ضررًا، تجنّب إعطاء توجيهات مباشرة واذكر أن الأفضل الرجوع لجهة مختصة.
-- إذا سألك المستخدم عن اسمك قل: «أنا نبراس، مساعدك الذكي».
-"""
-
-# -------------------------- تصميم واجهة نظيفة --------------------------
+    params = {
+        "engine": "google",
+        "q": query,
+        "api_key": SERPAPI_API_KEY
+    }
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    
+    # استخراج أول رابط أو وصف ليعرف المساعد المعلومة
+    if "organic_results" in results:
+        return results["organic_results"][0].get("snippet", "لا يوجد وصف")
+    return "لم أجد نتائج."
+# -------------------------- تصميم واجهة فاخرة (أسود + ذهبي + أزرق) --------------------------
 st.markdown("""
 <style>
 * {
@@ -123,6 +81,9 @@ st.markdown("""
     margin: 0;
     font-size: 13px;
     color: #cbd5f5;
+}
+.top-right {
+    text-align: left;
 }
 .chat-area {
     max-width: 950px;
@@ -182,6 +143,67 @@ st.markdown("""
     z-index: 999;
     border: 1px solid rgba(148,163,184,0.5);
 }
+.input-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 17px;
+    padding: 10px;
+    background: transparent;
+    color: #e5e7eb;
+}
+.input-box input::placeholder {
+    color: #64748b;
+}
+.circle-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(15,23,42,0.8);
+}
+.circle-btn:hover {
+    transform: scale(1.06) translateY(-1px);
+}
+.voice-btn {
+    background: radial-gradient(circle at top, #22c55e 0%, #16a34a 60%);
+    color: white;
+from serpapi import GoogleSearch # تأكد من وجود هذا في الأعلى
+
+# ... (داخل دالة الإرسال) ...
+if send and user_input.strip():
+    query = user_input.strip()
+    st.session_state.chat_history.append({"role": "user", "content": query})
+
+    with st.spinner("نبراس يبحث ويجهز لك ردًا فاخرًا..."):
+        try:
+            # 1. البحث أولاً
+            search_results = search_google(query)
+            
+            # 2. إرسال النتيجة مع السؤال لـ OpenAI
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"{system_prompt}\nمعلومات بحثية حديثة يمكنك استخدامها: {search_results}"},
+                    *st.session_state.chat_history
+                ]
+            )
+
+            answer = response.choices[0].message.content
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            
+            # ... (باقي الكود الخاص بحفظ المحادثة والصوت كما هو) ...
+            st.session_state.temp_input = ""
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"❌ حدث خطأ في الاتصال: {str(e)}")
 """, unsafe_allow_html=True)
 
 # -------------------------- شريط التحكم الأعلى --------------------------
@@ -192,13 +214,14 @@ with col1:
     if st.button("✏️ جديد", help="بدء محادثة جديدة"):
         st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
         st.rerun()
+    st.button("⋮⋮⋮", help="خيارات إضافية")
 
 with col2:
     st.markdown(
         """
         <div class="top-center">
-            <h1>نبراس</h1>
-            <p>ذكاء – وضوح – أسلوب مبسط</p>
+            <h1>نبراس – مساعدك العام الفاخر</h1>
+            <p>ذكاء – وضوح – أسلوب راقي</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -220,7 +243,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------- إدارة سجل المحادثة --------------------------
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… مساعدك الذكي، اسألني ما تشاء."}]
+    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… مساعد عام فاخر، اسألني ما تشاء."}]
 
 # عرض المحادثة
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
@@ -231,17 +254,10 @@ for msg in st.session_state.chat_history:
         st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- منطقة الإدخال داخل المربع --------------------------
-st.markdown('<div class="input-box">', unsafe_allow_html=True)
-col_input, col_voice = st.columns([5, 1])
-
-with col_input:
-    user_input = st.chat_input("اكتب سؤالك هنا، أو سجل صوتاً...")
-
-with col_voice:
-    voice_input = st.audio_input("🎙️", label_visibility="collapsed")
-
-st.markdown('</div>', unsafe_allow_html=True)
+# -------------------------- مربع الكتابة --------------------------
+voice_input = st.audio_input("سجل صوتك هنا", label_visibility="collapsed")
+# ✅ مدخل المحادثة الصحيح والآمن لـ نبراس
+user_input = st.chat_input("اكتب سؤالك هنا...")
 
 # -------------------------- معالجة الإدخال الصوتي --------------------------
 if voice_input:
@@ -252,50 +268,70 @@ if voice_input:
                 file=voice_input,
                 language="ar"
             )
-            user_input = res.text
-            st.success(f"✅ تم تحويل الصوت: {user_input}")
+            st.session_state.temp_input = res.text
+            st.rerun()
         except Exception as e:
             st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
 
-# -------------------------- إرسال السؤال وجلب الرد الحديث --------------------------
+# -------------------------- إرسال السؤال وجلب رد احترافي --------------------------
 if user_input and user_input.strip():
-    query = user_input.strip()
-    st.session_state.chat_history.append({"role": "user", "content": query})
+    st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
 
-    with st.spinner("نبراس يبحث ويجهز لك ردًا..."):
+    with st.spinner("نبراس يجهز لك ردًا فاخرًا وواضحًا..."):
         try:
-            # جلب معلومات حديثة من الإنترنت
-            search_info = search_google(query)
+            system_prompt = """
+أنت «نبراس» – مساعد عام فاخر، ذكي، هادئ، وأسلوبك راقي وواضح.
+تتحدث بالعربية الفصحى المبسطة أو بلهجة سعودية خفيفة حسب أسلوب المستخدم.
 
-            # إرسال الطلب للنموذج الحديث والصحيح
-            response = client.chat.completions.create(
+🎯 دورك:
+- الإجابة عن الأسئلة العامة، التقنية، الإدارية، اليومية، التعليمية، والصيانة بشكل واضح ومختصر ومفيد.
+- تقديم أمثلة عملية عند الحاجة.
+- تنظيم الإجابات في نقاط أو خطوات عند طلب شرح أو طريقة عمل شيء.
+- ربط الإجابة بسياق المحادثة قدر الإمكان.
+
+⚖️ قواعد مهمة:
+- لا تخترع معلومات، وإذا لم تكن متأكدًا قل بوضوح: «المعلومة غير مؤكدة» أو «لا أملك تفاصيل دقيقة عن هذا الموضوع».
+- تجنب الإطالة غير الضرورية، واجعل كل جملة لها فائدة.
+- إذا كان السؤال غامضًا، اطلب توضيحًا بسيطًا.
+- إذا كان الموضوع حساسًا أو قد يسبب ضررًا، تجنّب إعطاء توجيهات مباشرة واذكر أن الأفضل الرجوع لجهة مختصة.
+- إذا سألك المستخدم عن اسمك قل: «أنا نبراس، مساعدك العام الفاخر».
+
+🧠 أسلوب الكتابة:
+- استخدم لغة بسيطة، واضحة، بدون تعقيد.
+- يمكنك استخدام نقاط مرتبة عند شرح خطوات أو حلول.
+- كن متعاونًا وودودًا، لكن بدون مبالغة في المجاملات.
+"""
+
+            # 🔥 التعديل الجديد هنا — استبدال النموذج القديم
+            response = client.responses.create(
                 model="gpt-4.1-mini",
-                messages=[
-                    {"role": "system", "content": f"{SYSTEM_PROMPT}\n\nمعلومات بحثية حديثة: {search_info}"},
+                input=[
+                    {"role": "system", "content": system_prompt},
                     *st.session_state.chat_history
                 ]
             )
-            answer = response.choices[0].message.content
+
+            answer = response.output_text
+
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-            # حفظ المحادثة
             if "all_chats" not in st.session_state:
                 st.session_state.all_chats = []
             st.session_state.all_chats.append({
-                "date": NOW.strftime("%H:%M - %d/%m"),
+                "date": datetime.now().strftime("%H:%M - %d/%m"),
                 "messages": st.session_state.chat_history.copy()
             })
 
-            # تحويل الرد إلى صوت وتشغيله تلقائياً
             speech = client.audio.speech.create(
                 model="tts-1",
-                voice="nova",
+                voice="alloy",
                 input=answer,
                 response_format="mp3"
             )
             audio_b64 = base64.b64encode(speech.content).decode("utf-8")
-            st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3", autoplay=True)
+            st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
 
+            st.session_state.temp_input = ""
             st.rerun()
 
         except Exception as e:
