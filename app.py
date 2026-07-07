@@ -60,7 +60,7 @@ def search_google(query):
             "engine": "google",
             "q": query,
             "api_key": SERPAPI_API_KEY,
-            "num": 2
+            "num": 2  # قللنا لـ 2 عشان أسرع وأقل استهلاك
         }
         search = GoogleSearch(params)
         results = search.get_dict()
@@ -76,7 +76,7 @@ def search_google(query):
     except:
         return ""
 
-# -------------------------- واجهة --------------------------
+# -------------------------- واجهة (بدون خلفيات وأيقونات) --------------------------
 st.markdown("""
 <style>
 * {
@@ -96,7 +96,7 @@ st.markdown("""
     left: 0;
     right: 0;
     background: #ffffff;
-    padding: 10px 20px;
+    padding: 12px 25px;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
@@ -105,64 +105,10 @@ st.markdown("""
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-/* ===== السطر العلوي (الشعار + الأيقونات) ===== */
-.top-left {
-    display: flex;
-    align-items: center;
-    gap: 0;
-}
-
-/* أيقونة القلم الصغير (يسار) */
-.pen-icon {
-    font-size: 18px;
-    color: #667eea;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 8px;
-    transition: 0.3s;
-}
-.pen-icon:hover {
-    background: #f0f4ff;
-}
-
-/* الشعار (وسط) */
-.logo {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1a1a1a;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    padding: 0 10px;
-}
-
-/* الشرطتين (القائمة المنسدلة) */
-.hamburger {
-    font-size: 22px;
-    font-weight: 300;
-    color: #1a1a1a;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 8px;
-    transition: 0.3s;
-}
-.hamburger:hover {
-    background: #f0f4ff;
-}
-
-/* النص الترحيبي */
-.top-center p {
-    margin: 0;
-    font-size: 13px;
-    color: #6b7280;
-    text-align: center;
-}
-
-/* ===== منطقة المحادثة ===== */
 .chat-area {
     max-width: 850px;
-    margin: 70px auto 100px;
-    padding: 8px 5px 20px;
+    margin: 80px auto 120px;
+    padding: 10px 5px 30px;
 }
 
 .msg {
@@ -186,7 +132,6 @@ st.markdown("""
     border-radius: 0 !important;
 }
 
-/* ===== مربع الكتابة ===== */
 div[data-testid="stChatInput"] {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
@@ -216,7 +161,6 @@ div[data-testid="stChatInput"] button {
     padding: 6px !important;
 }
 
-/* ===== القائمة المنسدلة ===== */
 div[data-testid="stPopover"] {
     border-radius: 12px !important;
     border: 1px solid #e5e7eb !important;
@@ -254,30 +198,34 @@ div[data-testid="stPopover"] button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- الشريط العلوي (بالشكل الجديد) --------------------------
+# -------------------------- الشريط العلوي --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 
-col_left, col_center, col_right = st.columns([1.5, 2, 1.5])
+col_left, col_center, col_right = st.columns([1.2, 2, 1.2])
 
 with col_left:
     st.markdown("""
-    <div class="top-left">
-        <!-- أيقونة القلم الصغير (يسار) -->
-        <span class="pen-icon" onclick="location.reload()">✏️</span>
-        
-        <!-- الشعار -->
-        <span class="logo">نبراس</span>
-        
-        <!-- الشرطتين ☰ (القائمة المنسدلة) -->
-        <span class="hamburger">☰</span>
+    <div style="display: flex; align-items: center; gap: 0;">
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 8px 16px 8px 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        ">
+            <span style="font-size: 22px; color: white; transform: rotate(-10deg);">✍️</span>
+            <span style="font-size: 20px; font-weight: 700; color: white; letter-spacing: 0.5px;">Nbras</span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_center:
     st.markdown(
         """
-        <div class="top-center">
-            <p>مساعدك الذكي – بسيط، سريع، واضح</p>
+        <div style="text-align: center;">
+            <p style="margin: 0; font-size: 13px; color: #6b7280;">مساعدك الذكي – بسيط، سريع، واضح</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -342,14 +290,17 @@ if user_input:
         try:
             search_results = search_google(query)
             
+            # ✅ تعليمات مختصرة ودقيقة (تقلل الاستهلاك)
             system_prompt = f"""
 أنت «نبراس» – مساعد ذكي، مختصر، ودقيق.
 
 🎯 تعليمات مهمة جداً:
-- اختصر قدر الإمكان (جمل قصيرة، نقاط مختصرة)
-- لا تزيد عن 50 كلمة في الرد الواحد
-- اذكر المعلومة الأساسية فقط بدون مقدمات
+- **اختصر قدر الإمكان** (جمل قصيرة، نقاط مختصرة)
+- **لا تزيد عن 50 كلمة** في الرد الواحد
+- **اذكر المعلومة الأساسية فقط** بدون مقدمات
 - استخدم نقاط مرقمة إذا كان السؤال يحتاج شرح (حد أقصى 3 نقاط)
+- لا تكرر المعلومة
+- إذا السؤال غامض، اسأل توضيح بجملة وحدة
 
 📌 معلومات من البحث:
 {search_results if search_results else "لا توجد معلومات بحث محدثة."}
@@ -361,8 +312,8 @@ if user_input:
                     {"role": "system", "content": system_prompt},
                     *st.session_state.chat_history
                 ],
-                max_tokens=250,
-                temperature=0.3,
+                max_tokens=250,  # قللنا لـ 250 عشان أقل استهلاك
+                temperature=0.3,  # أقل إبداع = ردود أكثر دقة
                 stream=True
             )
 
