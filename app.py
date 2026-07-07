@@ -5,7 +5,6 @@ from datetime import datetime
 from serpapi import GoogleSearch
 import json
 import os
-import random
 
 # -------------------------- إعدادات الصفحة --------------------------
 st.set_page_config(
@@ -25,54 +24,6 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- إدارة المستخدمين (تسجيل الدخول) --------------------------
-USERS_FILE = "users.json"
-
-def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {}
-
-def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False, indent=2)
-
-# تحميل المستخدمين
-if "users" not in st.session_state:
-    st.session_state.users = load_users()
-
-# -------------------------- وظائف تسجيل الدخول --------------------------
-def login_user(phone):
-    """تسجيل دخول المستخدم"""
-    st.session_state.current_user = phone
-    st.session_state.is_logged_in = True
-    st.rerun()
-
-def logout_user():
-    """تسجيل خروج المستخدم"""
-    st.session_state.current_user = None
-    st.session_state.is_logged_in = False
-    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
-    st.rerun()
-
-def register_user(phone):
-    """تسجيل مستخدم جديد"""
-    if phone not in st.session_state.users:
-        st.session_state.users[phone] = {
-            "phone": phone,
-            "joined": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "chats": []
-        }
-        save_users(st.session_state.users)
-        return True
-    return False
-
-# -------------------------- حالة تسجيل الدخول --------------------------
-if "is_logged_in" not in st.session_state:
-    st.session_state.is_logged_in = False
-    st.session_state.current_user = None
-
 # -------------------------- الذاكرة --------------------------
 MEMORY_FILE = "memory.json"
 
@@ -88,6 +39,17 @@ def save_memory(data):
 
 if "memory" not in st.session_state:
     st.session_state.memory = load_memory()
+
+user_id = "default_user"
+
+if user_id not in st.session_state.memory:
+    st.session_state.memory[user_id] = []
+
+if "chat_history" not in st.session_state:
+    if st.session_state.memory[user_id]:
+        st.session_state.chat_history = st.session_state.memory[user_id]
+    else:
+        st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
 
 # -------------------------- دالة البحث --------------------------
 def search_google(query):
@@ -114,117 +76,7 @@ def search_google(query):
     except:
         return ""
 
-# -------------------------- شاشة تسجيل الدخول --------------------------
-def show_login_page():
-    st.markdown("""
-    <style>
-    .login-container {
-        max-width: 400px;
-        margin: 100px auto;
-        padding: 40px;
-        background: #ffffff;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e5e7eb;
-        text-align: center;
-    }
-    .login-container h1 {
-        font-size: 28px;
-        margin-bottom: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .login-container p {
-        color: #6b7280;
-        margin-bottom: 30px;
-    }
-    .login-container input {
-        width: 100%;
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        font-size: 16px;
-        text-align: center;
-        margin-bottom: 15px;
-        direction: ltr;
-    }
-    .login-container input:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    .login-container button {
-        width: 100%;
-        padding: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .login-container button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-    .login-container .error {
-        color: #ef4444;
-        font-size: 14px;
-        margin-top: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown('<h1>✍️ نبراس</h1>', unsafe_allow_html=True)
-    st.markdown('<p>مساعدك الذكي – بسيط، سريع، واضح</p>', unsafe_allow_html=True)
-    
-    # نموذج تسجيل الدخول
-    with st.form("login_form", clear_on_submit=True):
-        phone = st.text_input("📱 رقم الجوال", placeholder="مثال: 05xxxxxxxx", type="default")
-        submitted = st.form_submit_button("🚀 دخول / تسجيل")
-        
-        if submitted and phone:
-            # تنظيف الرقم
-            phone = phone.strip()
-            if len(phone) < 9:
-                st.markdown('<p class="error">⚠️ الرجاء إدخال رقم جوال صحيح</p>', unsafe_allow_html=True)
-            else:
-                # تسجيل المستخدم إذا كان جديد
-                if phone not in st.session_state.users:
-                    register_user(phone)
-                # تسجيل الدخول
-                login_user(phone)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# =====================================================================
-#                          التطبيق الرئيسي
-# =====================================================================
-
-# إذا كان المستخدم غير مسجل الدخول، اعرض شاشة تسجيل الدخول
-if not st.session_state.is_logged_in:
-    show_login_page()
-    st.stop()
-
-# -------------------------- باقي الكود (بعد تسجيل الدخول) --------------------------
-
-# جلب محادثات المستخدم
-user_id = st.session_state.current_user
-
-if user_id not in st.session_state.memory:
-    st.session_state.memory[user_id] = []
-
-if "chat_history" not in st.session_state:
-    if st.session_state.memory[user_id]:
-        st.session_state.chat_history = st.session_state.memory[user_id]
-    else:
-        st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
-
-# -------------------------- واجهة التطبيق --------------------------
+# -------------------------- واجهة --------------------------
 st.markdown("""
 <style>
 * {
@@ -253,11 +105,14 @@ st.markdown("""
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
+/* ===== السطر العلوي (الشعار + الأيقونات) ===== */
 .top-left {
     display: flex;
     align-items: center;
     gap: 0;
 }
+
+/* أيقونة القلم الصغير (يسار) */
 .pen-icon {
     font-size: 18px;
     color: #667eea;
@@ -269,14 +124,19 @@ st.markdown("""
 .pen-icon:hover {
     background: #f0f4ff;
 }
+
+/* الشعار (وسط) */
 .logo {
     font-size: 22px;
     font-weight: 700;
+    color: #1a1a1a;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     padding: 0 10px;
 }
+
+/* الشرطتين (القائمة المنسدلة) */
 .hamburger {
     font-size: 22px;
     font-weight: 300;
@@ -290,27 +150,7 @@ st.markdown("""
     background: #f0f4ff;
 }
 
-.user-info {
-    font-size: 13px;
-    color: #6b7280;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.user-info .logout-btn {
-    background: none;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    font-size: 13px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    transition: 0.3s;
-}
-.user-info .logout-btn:hover {
-    background: #fef2f2;
-}
-
+/* النص الترحيبي */
 .top-center p {
     margin: 0;
     font-size: 13px;
@@ -318,6 +158,7 @@ st.markdown("""
     text-align: center;
 }
 
+/* ===== منطقة المحادثة ===== */
 .chat-area {
     max-width: 850px;
     margin: 70px auto 100px;
@@ -345,6 +186,7 @@ st.markdown("""
     border-radius: 0 !important;
 }
 
+/* ===== مربع الكتابة ===== */
 div[data-testid="stChatInput"] {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
@@ -353,6 +195,7 @@ div[data-testid="stChatInput"] {
     box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
     margin-bottom: 10px !important;
 }
+
 div[data-testid="stChatInput"] input {
     color: #1a1a1a !important;
     font-weight: 500 !important;
@@ -361,9 +204,11 @@ div[data-testid="stChatInput"] input {
     padding: 8px 12px !important;
     font-size: 15px !important;
 }
+
 div[data-testid="stChatInput"] input::placeholder {
     color: #9ca3af !important;
 }
+
 div[data-testid="stChatInput"] button {
     background: #1a1a1a !important;
     color: #ffffff !important;
@@ -371,12 +216,14 @@ div[data-testid="stChatInput"] button {
     padding: 6px !important;
 }
 
+/* ===== القائمة المنسدلة ===== */
 div[data-testid="stPopover"] {
     border-radius: 12px !important;
     border: 1px solid #e5e7eb !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
     padding: 8px !important;
 }
+
 div[data-testid="stPopover"] button {
     border-bottom: none !important;
     padding: 8px 12px !important;
@@ -384,6 +231,7 @@ div[data-testid="stPopover"] button {
     margin: 2px 0 !important;
     font-size: 14px !important;
 }
+
 div[data-testid="stPopover"] button:hover {
     background: #f3f4f6 !important;
 }
@@ -391,6 +239,7 @@ div[data-testid="stPopover"] button:hover {
 .stProgress > div > div {
     background: linear-gradient(135deg, #667eea, #764ba2) !important;
 }
+
 .typing-indicator {
     display: inline-block;
     font-size: 18px;
@@ -405,7 +254,7 @@ div[data-testid="stPopover"] button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- الشريط العلوي --------------------------
+# -------------------------- الشريط العلوي (بالشكل الجديد) --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 
 col_left, col_center, col_right = st.columns([1.5, 2, 1.5])
@@ -413,8 +262,13 @@ col_left, col_center, col_right = st.columns([1.5, 2, 1.5])
 with col_left:
     st.markdown("""
     <div class="top-left">
+        <!-- أيقونة القلم الصغير (يسار) -->
         <span class="pen-icon" onclick="location.reload()">✏️</span>
+        
+        <!-- الشعار -->
         <span class="logo">نبراس</span>
+        
+        <!-- الشرطتين ☰ (القائمة المنسدلة) -->
         <span class="hamburger">☰</span>
     </div>
     """, unsafe_allow_html=True)
@@ -430,25 +284,24 @@ with col_center:
     )
 
 with col_right:
-    # عرض معلومات المستخدم
-    user_display = st.session_state.current_user
-    if len(user_display) > 10:
-        user_display = user_display[:6] + "***" + user_display[-2:]
-    
-    st.markdown(f"""
-    <div class="user-info">
-        <span>👤 {user_display}</span>
-        <button class="logout-btn" onclick="location.href='?logout=true'">🚪 خروج</button>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.popover("📋 المحادثات السابقة"):
+        if st.button("🗑️ مسح الذاكرة", use_container_width=True):
+            st.session_state.memory[user_id] = []
+            st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
+            save_memory(st.session_state.memory)
+            st.rerun()
+        st.divider()
+        if "all_chats" not in st.session_state:
+            st.session_state.all_chats = []
+        if st.session_state.all_chats:
+            for i, c in enumerate(st.session_state.all_chats[-5:]):
+                if st.button(f"📝 محادثة {i+1} - {c['date']}", use_container_width=True):
+                    st.session_state.chat_history = c["messages"]
+                    st.rerun()
+        else:
+            st.info("لا توجد محادثات سابقة")
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-# معالجة تسجيل الخروج
-if "logout" in st.query_params:
-    logout_user()
-    st.query_params.clear()
-    st.rerun()
 
 # -------------------------- عرض المحادثة --------------------------
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
@@ -496,6 +349,7 @@ if user_input:
 - اختصر قدر الإمكان (جمل قصيرة، نقاط مختصرة)
 - لا تزيد عن 50 كلمة في الرد الواحد
 - اذكر المعلومة الأساسية فقط بدون مقدمات
+- استخدم نقاط مرقمة إذا كان السؤال يحتاج شرح (حد أقصى 3 نقاط)
 
 📌 معلومات من البحث:
 {search_results if search_results else "لا توجد معلومات بحث محدثة."}
@@ -527,6 +381,13 @@ if user_input:
             st.session_state.chat_history.append({"role": "assistant", "content": full_response})
             st.session_state.memory[user_id] = st.session_state.chat_history
             save_memory(st.session_state.memory)
+
+            if "all_chats" not in st.session_state:
+                st.session_state.all_chats = []
+            st.session_state.all_chats.append({
+                "date": datetime.now().strftime("%H:%M - %d/%m"),
+                "messages": st.session_state.chat_history.copy()
+            })
 
             try:
                 speech = client.audio.speech.create(
