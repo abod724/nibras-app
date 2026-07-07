@@ -3,6 +3,7 @@ import streamlit as st
 from openai import OpenAI
 import base64
 from datetime import datetime
+from serpapi import GoogleSearch
 
 # -------------------------- إعدادات الصفحة --------------------------
 st.set_page_config(
@@ -14,26 +15,44 @@ st.set_page_config(
 
 # -------------------------- قراءة المفتاح الآمنة --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
-SERPAPI_API_KEY = st.secrets["SERPAPI_API_KEY"]
+SERPAPI_API_KEY = st.secrets.get("SERPAPI_API_KEY")
+
 if not API_KEY:
     st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
 
+if not SERPAPI_API_KEY:
+    st.error("⚠️ مفتاح SerpAPI غير مضاف في إعدادات Streamlit")
+    st.stop()
+
 client = OpenAI(api_key=API_KEY)
-# دالة البحث في جوجل
+
+# -------------------------- دالة البحث في جوجل --------------------------
 def search_google(query):
-    params = {
-        "engine": "google",
-        "q": query,
-        "api_key": SERPAPI_API_KEY
-    }
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    
-    # استخراج أول رابط أو وصف ليعرف المساعد المعلومة
-    if "organic_results" in results:
-        return results["organic_results"][0].get("snippet", "لا يوجد وصف")
-    return "لم أجد نتائج."
+    try:
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": SERPAPI_API_KEY,
+            "num": 5  # عدد النتائج
+        }
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        
+        # استخراج النصوص من النتائج
+        snippets = []
+        if "organic_results" in results:
+            for result in results["organic_results"][:5]:
+                snippet = result.get("snippet", "")
+                if snippet:
+                    snippets.append(snippet)
+        
+        if snippets:
+            return "\n".join(snippets)
+        return "لم أجد نتائج بحث محددة."
+    except Exception as e:
+        return f"حدث خطأ في البحث: {str(e)}"
+
 # -------------------------- تصميم واجهة فاخرة (أسود + ذهبي + أزرق) --------------------------
 st.markdown("""
 <style>
@@ -174,36 +193,8 @@ st.markdown("""
 .voice-btn {
     background: radial-gradient(circle at top, #22c55e 0%, #16a34a 60%);
     color: white;
-from serpapi import GoogleSearch # تأكد من وجود هذا في الأعلى
-
-# ... (داخل دالة الإرسال) ...
-if send and user_input.strip():
-    query = user_input.strip()
-    st.session_state.chat_history.append({"role": "user", "content": query})
-
-    with st.spinner("نبراس يبحث ويجهز لك ردًا فاخرًا..."):
-        try:
-            # 1. البحث أولاً
-            search_results = search_google(query)
-            
-            # 2. إرسال النتيجة مع السؤال لـ OpenAI
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": f"{system_prompt}\nمعلومات بحثية حديثة يمكنك استخدامها: {search_results}"},
-                    *st.session_state.chat_history
-                ]
-            )
-
-            answer = response.choices[0].message.content
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
-            
-            # ... (باقي الكود الخاص بحفظ المحادثة والصوت كما هو) ...
-            st.session_state.temp_input = ""
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"❌ حدث خطأ في الاتصال: {str(e)}")
+}
+</style>
 """, unsafe_allow_html=True)
 
 # -------------------------- شريط التحكم الأعلى --------------------------
@@ -256,7 +247,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------- مربع الكتابة --------------------------
 voice_input = st.audio_input("سجل صوتك هنا", label_visibility="collapsed")
-# ✅ مدخل المحادثة الصحيح والآمن لـ نبراس
+
+# مدخل المحادثة
 user_input = st.chat_input("اكتب سؤالك هنا...")
 
 # -------------------------- معالجة الإدخال الصوتي --------------------------
@@ -273,13 +265,18 @@ if voice_input:
         except Exception as e:
             st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
 
-# -------------------------- إرسال السؤال وجلب رد احترافي --------------------------
+# -------------------------- إرسال السؤال وجلب رد احترافي مع البحث --------------------------
 if user_input and user_input.strip():
-    st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
+    query = user_input.strip()
+    st.session_state.chat_history.append({"role": "user", "content": query})
 
-    with st.spinner("نبراس يجهز لك ردًا فاخرًا وواضحًا..."):
+    with st.spinner("نبراس يبحث ويجهز لك ردًا فاخرًا..."):
         try:
-            system_prompt = """
+            # 1. البحث في جوجل
+            search_results = search_google(query)
+
+            # 2. إعداد النظام مع نتائج البحث
+            system_prompt = f"""
 أنت «نبراس» – مساعد عام فاخر، ذكي، هادئ، وأسلوبك راقي وواضح.
 تتحدث بالعربية الفصحى المبسطة أو بلهجة سعودية خفيفة حسب أسلوب المستخدم.
 
@@ -300,21 +297,25 @@ if user_input and user_input.strip():
 - استخدم لغة بسيطة، واضحة، بدون تعقيد.
 - يمكنك استخدام نقاط مرتبة عند شرح خطوات أو حلول.
 - كن متعاونًا وودودًا، لكن بدون مبالغة في المجاملات.
+
+📌 معلومات محدثة من البحث عن سؤال المستخدم:
+{search_results}
 """
 
-            # 🔥 التعديل الجديد هنا — استبدال النموذج القديم
-            response = client.responses.create(
-                model="gpt-4.1-mini",
-                input=[
+            # 3. استدعاء النموذج مع السياق
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
                     {"role": "system", "content": system_prompt},
                     *st.session_state.chat_history
                 ]
             )
 
-            answer = response.output_text
+            answer = response.choices[0].message.content
 
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
+            # حفظ المحادثة
             if "all_chats" not in st.session_state:
                 st.session_state.all_chats = []
             st.session_state.all_chats.append({
@@ -322,14 +323,18 @@ if user_input and user_input.strip():
                 "messages": st.session_state.chat_history.copy()
             })
 
-            speech = client.audio.speech.create(
-                model="tts-1",
-                voice="alloy",
-                input=answer,
-                response_format="mp3"
-            )
-            audio_b64 = base64.b64encode(speech.content).decode("utf-8")
-            st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+            # تحويل الرد إلى صوت
+            try:
+                speech = client.audio.speech.create(
+                    model="tts-1",
+                    voice="alloy",
+                    input=answer,
+                    response_format="mp3"
+                )
+                audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+            except Exception as e:
+                st.warning(f"⚠️ خطأ في تحويل النص لصوت: {str(e)}")
 
             st.session_state.temp_input = ""
             st.rerun()
