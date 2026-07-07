@@ -66,14 +66,14 @@ st.markdown("""
 }
 #MainMenu, footer, header {visibility: hidden;}
 
-/* الشريط العلوي */
+/* ===== الشريط العلوي ===== */
 .top-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     background: #ffffff;
-    padding: 14px 25px;
+    padding: 10px 20px;  /* تقليل المسافة */
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
@@ -81,32 +81,47 @@ st.markdown("""
     z-index: 1000;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
-.top-center h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
+
+/* القلم في اليسار مع العنوان */
+.top-left {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* مسافة صغيرة بين القلم والعنوان */
+}
+.top-left .pen-icon {
+    font-size: 22px;
+    background: #f0f4ff;
+    padding: 6px;
+    border-radius: 10px;
     color: #1a1a1a;
 }
+.top-left .app-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
 .top-center p {
     margin: 0;
     font-size: 13px;
     color: #6b7280;
 }
 
-/* منطقة المحادثة */
+/* ===== منطقة المحادثة ===== */
 .chat-area {
     max-width: 850px;
-    margin: 80px auto 120px;
-    padding: 10px 5px 30px;
+    margin: 70px auto 100px;  /* تقليل المسافات */
+    padding: 8px 5px 20px;   /* تقليل المسافات */
 }
 
-/* تنسيق الرسائل */
+/* ===== تنسيق الرسائل ===== */
 .msg {
-    padding: 14px 18px;
-    margin: 10px 0;
+    padding: 12px 16px;      /* تقليل المسافات */
+    margin: 6px 0;           /* تقليل المسافات */
     border-radius: 16px;
     max-width: 80%;
-    line-height: 1.7;
+    line-height: 1.6;
     font-size: 15px;
 }
 .user {
@@ -122,13 +137,14 @@ st.markdown("""
     border-bottom-left-radius: 4px;
 }
 
-/* ===== مربع الكتابة ===== */
+/* ===== مربع الكتابة (مختصر وأنيق) ===== */
 div[data-testid="stChatInput"] {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 12px !important;
-    padding: 4px 16px !important;
+    padding: 2px 12px !important;  /* تقليل المسافات */
     box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    margin-bottom: 10px !important;
 }
 
 div[data-testid="stChatInput"] input {
@@ -136,7 +152,7 @@ div[data-testid="stChatInput"] input {
     font-weight: 500 !important;
     background: #ffffff !important;
     border-radius: 8px !important;
-    padding: 10px 14px !important;
+    padding: 8px 12px !important;  /* تقليل المسافات */
     font-size: 15px !important;
 }
 
@@ -148,36 +164,63 @@ div[data-testid="stChatInput"] button {
     background: #1a1a1a !important;
     color: #ffffff !important;
     border-radius: 50% !important;
+    padding: 6px !important;  /* تقليل المسافات */
+}
+
+/* ===== القائمة المنسدلة (بدون شرطتين) ===== */
+div[data-testid="stPopover"] {
+    border-radius: 12px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    padding: 8px !important;
+}
+
+div[data-testid="stPopover"] button {
+    border-bottom: none !important;  /* إزالة الشرطتين */
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+    font-size: 14px !important;
+}
+
+div[data-testid="stPopover"] button:hover {
+    background: #f3f4f6 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------- الشريط العلوي --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
-col1, col2, col3 = st.columns([1.2, 2, 1.2])
 
-with col1:
-    if st.button("✏️ جديد", help="بدء محادثة جديدة"):
-        st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
-        st.rerun()
+# العمود الأيسر: القلم + العنوان
+col_left, col_center, col_right = st.columns([1.2, 2, 1.2])
 
-with col2:
+with col_left:
+    # القلم في اليسار مع العنوان
+    st.markdown("""
+    <div class="top-left">
+        <span class="pen-icon">✏️</span>
+        <span class="app-title">جديد نبراس</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_center:
     st.markdown(
         """
         <div class="top-center">
-            <h1>💬 نبراس</h1>
             <p>مساعدك الذكي – بسيط، سريع، واضح</p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-with col3:
+with col_right:
     with st.popover("📋 المحادثات السابقة"):
         if "all_chats" not in st.session_state:
             st.session_state.all_chats = []
         if st.session_state.all_chats:
             for i, c in enumerate(st.session_state.all_chats):
+                # إزالة الشرطتين من الأزرار (تمت عبر CSS)
                 if st.button(f"محادثة {i+1} - {c['date']}", use_container_width=True):
                     st.session_state.chat_history = c["messages"]
                     st.rerun()
@@ -188,7 +231,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------- سجل المحادثة --------------------------
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… مساعد عام، اسألني ما تشاء."}]
+    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
 
 # عرض المحادثة
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
