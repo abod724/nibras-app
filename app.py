@@ -342,11 +342,3 @@ if user_input and user_input.strip():
 
         except Exception as e:
             st.error(f"❌ حدث خطأ: {str(e)}")
-
-input[type="text"], 
-.input-box input, 
-input {
-    color: #000000 !important;
-    font-weight: bold !important;
-    font-size: 18px !important;
-}
