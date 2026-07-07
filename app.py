@@ -3,8 +3,8 @@ from openai import OpenAI
 import base64
 from datetime import datetime
 from serpapi import GoogleSearch
-import asyncio
 import concurrent.futures
+import time
 
 # -------------------------- إعدادات الصفحة --------------------------
 st.set_page_config(
@@ -22,23 +22,27 @@ if not API_KEY:
     st.error("⚠️ المفتاح غير مضاف في إعدادات Streamlit")
     st.stop()
 
+if not SERPAPI_API_KEY:
+    st.warning("⚠️ مفتاح SerpAPI غير مضاف، البحث في الإنترنت لن يعمل")
+    st.stop()
+
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- دالة البحث (محسّنة للسرعة) --------------------------
+# -------------------------- دالة البحث المحسنة --------------------------
 def search_google(query):
-    """بحث سريع مع timeout 5 ثواني فقط"""
+    """بحث في قوقل مع timeout"""
     if not SERPAPI_API_KEY:
         return ""
     
     try:
-        # استخدام executor مع timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(_do_search, query)
             try:
-                return future.result(timeout=5)  # حد أقصى 5 ثواني
+                result = future.result(timeout=8)
+                return result if result else ""
             except concurrent.futures.TimeoutError:
                 return "⏱️ انتهى وقت البحث، سأجيب من معرفتي."
-    except Exception:
+    except Exception as e:
         return ""
 
 def _do_search(query):
@@ -47,25 +51,26 @@ def _do_search(query):
             "engine": "google",
             "q": query,
             "api_key": SERPAPI_API_KEY,
-            "num": 3  # قللت العدد إلى 3 لتسريع
+            "num": 5
         }
         search = GoogleSearch(params)
         results = search.get_dict()
         
         snippets = []
         if "organic_results" in results:
-            for result in results["organic_results"][:3]:
+            for result in results["organic_results"][:5]:
                 snippet = result.get("snippet", "")
+                title = result.get("title", "")
                 if snippet:
-                    snippets.append(snippet)
+                    snippets.append(f"• {title}: {snippet}")
         
         if snippets:
             return "\n".join(snippets)
         return ""
-    except Exception:
+    except Exception as e:
         return ""
 
-# -------------------------- CSS المحسّن (نفس التعديلات السابقة) --------------------------
+# -------------------------- CSS (واجهة بيضاء وسوداء) --------------------------
 st.markdown("""
 <style>
 * {
@@ -93,38 +98,16 @@ st.markdown("""
     z-index: 1000;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
-
-.top-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.top-left .pen-icon {
-    font-size: 22px;
-    background: #f0f4ff;
-    padding: 6px;
-    border-radius: 10px;
-    color: #1a1a1a;
-}
-.top-left .app-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0;
-}
-
 .top-center p {
     margin: 0;
     font-size: 13px;
     color: #6b7280;
 }
-
 .chat-area {
     max-width: 850px;
     margin: 70px auto 100px;
     padding: 8px 5px 20px;
 }
-
 .msg {
     padding: 12px 16px;
     margin: 6px 0;
@@ -145,16 +128,13 @@ st.markdown("""
     margin-right: auto;
     border-bottom-left-radius: 4px;
 }
-
 div[data-testid="stChatInput"] {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 12px !important;
     padding: 2px 12px !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-    margin-bottom: 10px !important;
 }
-
 div[data-testid="stChatInput"] input {
     color: #1a1a1a !important;
     font-weight: 500 !important;
@@ -163,51 +143,25 @@ div[data-testid="stChatInput"] input {
     padding: 8px 12px !important;
     font-size: 15px !important;
 }
-
 div[data-testid="stChatInput"] input::placeholder {
     color: #9ca3af !important;
 }
-
 div[data-testid="stChatInput"] button {
     background: #1a1a1a !important;
     color: #ffffff !important;
     border-radius: 50% !important;
-    padding: 6px !important;
-}
-
-div[data-testid="stPopover"] {
-    border-radius: 12px !important;
-    border: 1px solid #e5e7eb !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-    padding: 8px !important;
-}
-
-div[data-testid="stPopover"] button {
-    border-bottom: none !important;
-    padding: 8px 12px !important;
-    border-radius: 8px !important;
-    margin: 2px 0 !important;
-    font-size: 14px !important;
-}
-
-div[data-testid="stPopover"] button:hover {
-    background: #f3f4f6 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------- الشريط العلوي --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
-
 col_left, col_center, col_right = st.columns([1.2, 2, 1.2])
 
 with col_left:
-    st.markdown("""
-    <div class="top-left">
-        <span class="pen-icon">✏️</span>
-        <span class="app-title">جديد نبراس</span>
-    </div>
-    """, unsafe_allow_html=True)
+    if st.button("✏️ جديد", help="بدء محادثة جديدة"):
+        st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
+        st.rerun()
 
 with col_center:
     st.markdown(
@@ -254,45 +208,60 @@ user_input = st.chat_input(
     accept_audio=True
 )
 
-# -------------------------- معالجة الإدخال (مع تحسين السرعة) --------------------------
+# -------------------------- معالجة الإدخال --------------------------
 if user_input:
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
     if query:
         st.session_state.chat_history.append({"role": "user", "content": query})
 
-        with st.spinner("⏳ جاري التفكير..."):
+        with st.spinner("🔍 جاري البحث والتفكير..."):
             try:
-                # البحث السريع (مع timeout)
+                # 1. البحث في قوقل (مع timeout)
                 search_results = search_google(query)
                 
-                # تحضير النظام (بدون انتظار)
-                system_prompt = f"""
+                # 2. تحديد ما إذا كان هناك نتائج بحث
+                has_search = search_results and "⏱️" not in search_results and "بحث" not in search_results
+                
+                # 3. تحضير النظام مع نتائج البحث
+                if has_search:
+                    system_prompt = f"""
+أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح.
+
+🔥 **قاعدة أساسية**: استخدم معلومات البحث أدناه في إجابتك، لأنها أحدث من معرفتك.
+
+📌 **نتائج البحث** (محدثة):
+{search_results}
+
+⚠️ إذا لم تكن المعلومات كافية، قل: «المعلومات محدودة، لكن بناءً على ما وجدت...»
+"""
+                else:
+                    system_prompt = """
 أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح.
 
 🎯 دورك:
 - الإجابة عن الأسئلة العامة، التقنية، اليومية، التعليمية.
 - استخدم نقاطاً مختصرة.
 - اجعل الإجابة مباشرة قدر الإمكان.
-
-📌 معلومات من البحث (إن وجدت):
-{search_results if search_results else "لا توجد معلومات بحث محدثة."}
-
-⚠️ إذا لم تكن متأكداً، قل: «ليس لدي معلومة مؤكدة».
+- إذا لم تكن متأكداً، قل: «ليس لدي معلومة مؤكدة».
 """
 
-                # استدعاء API مع timeout
+                # 4. استدعاء النموذج
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",  # أو gpt-3.5-turbo للسرعة الأكبر
+                    model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
                         *st.session_state.chat_history
                     ],
-                    max_tokens=500,  # حد أقصى للرد السريع
+                    max_tokens=600,
                     temperature=0.7
                 )
 
                 answer = response.choices[0].message.content
+
+                # 5. إضافة مصدر البحث إذا وجد
+                if has_search:
+                    answer += "\n\n🔍 *معلومات محدثة من البحث*"
 
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
@@ -304,20 +273,21 @@ if user_input:
                     "messages": st.session_state.chat_history.copy()
                 })
 
-                # تشغيل الصوت في الخلفية (اختياري، يمكن تعطيله للسرعة)
+                # تحويل الرد إلى صوت (اختياري)
                 try:
                     speech = client.audio.speech.create(
                         model="tts-1",
                         voice="alloy",
-                        input=answer,
+                        input=answer[:500],  # اختصار للسرعة
                         response_format="mp3"
                     )
                     audio_b64 = base64.b64encode(speech.content).decode("utf-8")
                     st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
                 except Exception:
-                    pass  # تجاهل أخطاء الصوت
+                    pass
 
                 st.rerun()
 
             except Exception as e:
-                st.error(f"❌ خطأ: {str(e)}")
+                st.error(f"❌ حدث خطأ: {str(e)}")
+                st.session_state.chat_history.pop()  # حذف رسالة المستخدم إذا فشل
