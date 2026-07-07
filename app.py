@@ -1,4 +1,3 @@
-RELOAD = "force_rebuild_v1"
 import streamlit as st
 from openai import OpenAI
 import base64
@@ -13,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# -------------------------- قراءة المفتاح الآمنة --------------------------
+# -------------------------- المفاتيح --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 SERPAPI_API_KEY = st.secrets.get("SERPAPI_API_KEY")
 
@@ -27,7 +26,7 @@ if not SERPAPI_API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- دالة البحث في جوجل --------------------------
+# -------------------------- دالة البحث --------------------------
 def search_google(query):
     try:
         params = {
@@ -52,153 +51,108 @@ def search_google(query):
     except Exception as e:
         return f"حدث خطأ في البحث: {str(e)}"
 
-# -------------------------- تصميم واجهة فاخرة (أسود + ذهبي + أزرق) --------------------------
+# -------------------------- واجهة بيضاء وسوداء (أنيقة) --------------------------
 st.markdown("""
 <style>
+/* تنسيق عام */
 * {
     direction: rtl;
     text-align: right;
-    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 .stApp {
-    background: radial-gradient(circle at top, #0f172a 0%, #020617 45%, #000000 100%);
-    color: #e5e7eb;
+    background: #ffffff;
+    color: #1a1a1a;
 }
 #MainMenu, footer, header {visibility: hidden;}
+
+/* الشريط العلوي */
 .top-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(90deg, #020617, #0f172a, #1d4ed8);
+    background: #ffffff;
     padding: 14px 25px;
-    border-bottom: 1px solid rgba(148,163,184,0.35);
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
-    box-shadow: 0 4px 18px rgba(15,23,42,0.8);
-}
-.top-left {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-.top-left button {
-    border-radius: 999px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .top-center h1 {
     margin: 0;
-    font-size: 30px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #facc15, #38bdf8, #f97316);
-    -webkit-background-clip: text;
-    color: transparent;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
 }
 .top-center p {
     margin: 0;
     font-size: 13px;
-    color: #cbd5f5;
+    color: #6b7280;
 }
-.top-right {
-    text-align: left;
-}
+
+/* منطقة المحادثة */
 .chat-area {
-    max-width: 950px;
-    margin: 90px auto 140px;
+    max-width: 850px;
+    margin: 80px auto 120px;
     padding: 10px 5px 30px;
 }
+
+/* تنسيق الرسائل */
 .msg {
-    padding: 16px 20px;
-    margin: 14px 0;
-    border-radius: 22px;
-    max-width: 85%;
-    line-height: 1.8;
-    font-size: 16px;
-    position: relative;
-}
-.msg::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: 22px;
-    border: 1px solid transparent;
+    padding: 14px 18px;
+    margin: 10px 0;
+    border-radius: 16px;
+    max-width: 80%;
+    line-height: 1.7;
+    font-size: 15px;
 }
 .user {
-    background: radial-gradient(circle at top, #1d4ed8 0%, #0f172a 60%);
-    color: #e5e7eb;
+    background: #1a1a1a;
+    color: #ffffff;
     margin-left: auto;
-    border-bottom-right-radius: 6px;
-    box-shadow: 0 4px 16px rgba(37,99,235,0.55);
-}
-.user::before {
-    border-color: rgba(59,130,246,0.7);
+    border-bottom-right-radius: 4px;
 }
 .bot {
-    background: linear-gradient(135deg, #020617, #0b1120);
-    border: 1px solid rgba(250,204,21,0.45);
+    background: #f3f4f6;
+    color: #1a1a1a;
     margin-right: auto;
-    border-bottom-left-radius: 6px;
-    box-shadow: 0 4px 18px rgba(15,23,42,0.9);
+    border-bottom-left-radius: 4px;
 }
-.bot::before {
-    border-color: rgba(250,204,21,0.6);
+
+/* ===== مربع الكتابة ===== */
+div[data-testid="stChatInput"] {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 4px 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
 }
-.input-box {
-    position: fixed;
-    bottom: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 92%;
-    max-width: 950px;
-    background: radial-gradient(circle at top, #0b1120 0%, #020617 60%);
-    border-radius: 999px;
-    padding: 14px 22px;
-    box-shadow: 0 10px 40px rgba(15,23,42,0.95);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    z-index: 999;
-    border: 1px solid rgba(148,163,184,0.5);
+
+div[data-testid="stChatInput"] input {
+    color: #1a1a1a !important;
+    font-weight: 500 !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 15px !important;
 }
-.input-box input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 17px;
-    padding: 10px;
-    background: #ffffff;
-    color: #000000;
-    font-weight: bold;
-    border-radius: 30px;
+
+div[data-testid="stChatInput"] input::placeholder {
+    color: #9ca3af !important;
 }
-.input-box input::placeholder {
-    color: #94a3b8;
-}
-.circle-btn {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 14px rgba(15,23,42,0.8);
-}
-.circle-btn:hover {
-    transform: scale(1.06) translateY(-1px);
-}
-.voice-btn {
-    background: radial-gradient(circle at top, #22c55e 0%, #16a34a 60%);
-    color: white;
+
+div[data-testid="stChatInput"] button {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- شريط التحكم الأعلى --------------------------
+# -------------------------- الشريط العلوي --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1.2, 2, 1.2])
 
@@ -206,14 +160,13 @@ with col1:
     if st.button("✏️ جديد", help="بدء محادثة جديدة"):
         st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
         st.rerun()
-    st.button("⋮⋮⋮", help="خيارات إضافية")
 
 with col2:
     st.markdown(
         """
         <div class="top-center">
-            <h1>نبراس – مساعدك العام الفاخر</h1>
-            <p>ذكاء – وضوح – أسلوب راقي</p>
+            <h1>💬 نبراس</h1>
+            <p>مساعدك الذكي – بسيط، سريع، واضح</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -229,13 +182,13 @@ with col3:
                     st.session_state.chat_history = c["messages"]
                     st.rerun()
         else:
-            st.info("لا توجد محادثات سابقة متوفرة")
+            st.info("لا توجد محادثات سابقة")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- إدارة سجل المحادثة --------------------------
+# -------------------------- سجل المحادثة --------------------------
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… مساعد عام فاخر، اسألني ما تشاء."}]
+    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… مساعد عام، اسألني ما تشاء."}]
 
 # عرض المحادثة
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
@@ -247,98 +200,75 @@ for msg in st.session_state.chat_history:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------- مربع الكتابة --------------------------
-voice_input = st.audio_input("سجل صوتك هنا", label_visibility="collapsed")
+user_input = st.chat_input(
+    "اكتب سؤالك هنا...",
+    accept_file=True,
+    file_type=["jpg", "jpeg", "png", "pdf", "csv", "txt"],
+    accept_audio=True
+)
 
-# مدخل المحادثة
-user_input = st.chat_input("اكتب سؤالك هنا...")
+# -------------------------- معالجة الإدخال --------------------------
+if user_input:
+    query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
+    
+    if query:
+        st.session_state.chat_history.append({"role": "user", "content": query})
 
-# -------------------------- معالجة الإدخال الصوتي --------------------------
-if voice_input:
-    with st.spinner("جاري تحويل صوتك إلى نص..."):
-        try:
-            res = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=voice_input,
-                language="ar"
-            )
-            st.session_state.temp_input = res.text
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ خطأ في تحويل الصوت: {str(e)}")
+        with st.spinner("نبراس يبحث..."):
+            try:
+                search_results = search_google(query)
 
-# -------------------------- إرسال السؤال وجلب رد احترافي مع البحث --------------------------
-if user_input and user_input.strip():
-    query = user_input.strip()
-    st.session_state.chat_history.append({"role": "user", "content": query})
-
-    with st.spinner("نبراس يبحث ويجهز لك ردًا فاخرًا..."):
-        try:
-            # 1. البحث في جوجل
-            search_results = search_google(query)
-
-            # 2. إعداد النظام مع نتائج البحث
-            system_prompt = f"""
-أنت «نبراس» – مساعد عام فاخر، ذكي، هادئ، وأسلوبك راقي وواضح.
-تتحدث بالعربية الفصحى المبسطة أو بلهجة سعودية خفيفة حسب أسلوب المستخدم.
+                system_prompt = f"""
+أنت «نبراس» – مساعد ذكي، أسلوبك بسيط وواضح.
+تتحدث بالعربية الفصحى أو بلهجة سعودية خفيفة.
 
 🎯 دورك:
-- الإجابة عن الأسئلة العامة، التقنية، الإدارية، اليومية، التعليمية، والصيانة بشكل واضح ومختصر ومفيد.
-- تقديم أمثلة عملية عند الحاجة.
-- تنظيم الإجابات في نقاط أو خطوات عند طلب شرح أو طريقة عمل شيء.
-- ربط الإجابة بسياق المحادثة قدر الإمكان.
+- الإجابة عن الأسئلة العامة، التقنية، اليومية، التعليمية.
+- قدّم أمثلة عملية عند الحاجة.
+- نظّم الإجابات في نقاط إذا كان السؤال يتطلب شرحاً.
 
-⚖️ قواعد مهمة:
-- لا تخترع معلومات، وإذا لم تكن متأكدًا قل بوضوح: «المعلومة غير مؤكدة» أو «لا أملك تفاصيل دقيقة عن هذا الموضوع».
-- تجنب الإطالة غير الضرورية، واجعل كل جملة لها فائدة.
-- إذا كان السؤال غامضًا، اطلب توضيحًا بسيطًا.
-- إذا كان الموضوع حساسًا أو قد يسبب ضررًا، تجنّب إعطاء توجيهات مباشرة واذكر أن الأفضل الرجوع لجهة مختصة.
-- إذا سألك المستخدم عن اسمك قل: «أنا نبراس، مساعدك العام الفاخر».
+⚖️ قواعد:
+- لا تخترع معلومات، وإذا لم تكن متأكداً قل: «المعلومة غير مؤكدة».
+- تجنب الإطالة غير الضرورية.
+- إذا كان السؤال غامضاً، اطلب توضيحاً.
+- إذا سألك عن اسمك: «أنا نبراس، مساعدك الذكي».
 
-🧠 أسلوب الكتابة:
-- استخدم لغة بسيطة، واضحة، بدون تعقيد.
-- يمكنك استخدام نقاط مرتبة عند شرح خطوات أو حلول.
-- كن متعاونًا وودودًا، لكن بدون مبالغة في المجاملات.
-
-📌 معلومات محدثة من البحث عن سؤال المستخدم:
+📌 معلومات محدثة من البحث:
 {search_results}
 """
 
-            # 3. استدعاء النموذج مع السياق
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    *st.session_state.chat_history
-                ]
-            )
-
-            answer = response.choices[0].message.content
-
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
-
-            # حفظ المحادثة
-            if "all_chats" not in st.session_state:
-                st.session_state.all_chats = []
-            st.session_state.all_chats.append({
-                "date": datetime.now().strftime("%H:%M - %d/%m"),
-                "messages": st.session_state.chat_history.copy()
-            })
-
-            # تحويل الرد إلى صوت
-            try:
-                speech = client.audio.speech.create(
-                    model="tts-1",
-                    voice="alloy",
-                    input=answer,
-                    response_format="mp3"
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        *st.session_state.chat_history
+                    ]
                 )
-                audio_b64 = base64.b64encode(speech.content).decode("utf-8")
-                st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+
+                answer = response.choices[0].message.content
+
+                st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+                if "all_chats" not in st.session_state:
+                    st.session_state.all_chats = []
+                st.session_state.all_chats.append({
+                    "date": datetime.now().strftime("%H:%M - %d/%m"),
+                    "messages": st.session_state.chat_history.copy()
+                })
+
+                try:
+                    speech = client.audio.speech.create(
+                        model="tts-1",
+                        voice="alloy",
+                        input=answer,
+                        response_format="mp3"
+                    )
+                    audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                    st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+                except Exception as e:
+                    st.warning(f"⚠️ خطأ في الصوت: {str(e)}")
+
+                st.rerun()
+
             except Exception as e:
-                st.warning(f"⚠️ خطأ في تحويل النص لصوت: {str(e)}")
-
-            st.session_state.temp_input = ""
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"❌ حدث خطأ: {str(e)}")
+                st.error(f"❌ خطأ: {str(e)}")
