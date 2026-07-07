@@ -34,12 +34,11 @@ def search_google(query):
             "engine": "google",
             "q": query,
             "api_key": SERPAPI_API_KEY,
-            "num": 5  # عدد النتائج
+            "num": 5
         }
         search = GoogleSearch(params)
         results = search.get_dict()
         
-        # استخراج النصوص من النتائج
         snippets = []
         if "organic_results" in results:
             for result in results["organic_results"][:5]:
@@ -168,11 +167,13 @@ st.markdown("""
     outline: none;
     font-size: 17px;
     padding: 10px;
-    background: transparent;
-    color: #e5e7eb;
+    background: #ffffff;
+    color: #000000;
+    font-weight: 500;
+    border-radius: 30px;
 }
 .input-box input::placeholder {
-    color: #64748b;
+    color: #94a3b8;
 }
 .circle-btn {
     width: 46px;
