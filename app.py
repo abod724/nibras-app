@@ -20,7 +20,7 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- CSS --------------------------
+# -------------------------- CSS (تصميم جديد) --------------------------
 st.markdown("""
 <style>
 * {
@@ -33,30 +33,59 @@ st.markdown("""
     color: #1a1a1a;
 }
 #MainMenu, footer, header {visibility: hidden;}
+
+/* الشريط العلوي - بدون خلفية سوداء */
 .top-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     background: #ffffff;
-    padding: 10px 20px;
+    padding: 12px 25px;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
+
+/* تنسيق اسم نبراس مع القلب */
+.top-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.top-left .heart {
+    font-size: 28px;
+    color: #dc2626;
+    margin-left: 4px;
+}
+.top-left .app-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+.top-left .app-sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin-right: 12px;
+}
+
 .top-center p {
     margin: 0;
     font-size: 13px;
     color: #6b7280;
 }
+
 .chat-area {
     max-width: 850px;
-    margin: 70px auto 100px;
+    margin: 80px auto 100px;
     padding: 8px 5px 20px;
 }
+
 .msg {
     padding: 12px 16px;
     margin: 6px 0;
@@ -77,6 +106,7 @@ st.markdown("""
     margin-right: auto;
     border-bottom-left-radius: 4px;
 }
+
 div[data-testid="stChatInput"] {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
@@ -91,17 +121,28 @@ div[data-testid="stChatInput"] input {
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- الشريط العلوي --------------------------
+# -------------------------- الشريط العلوي الجديد --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
-col_left, col_center, col_right = st.columns([1.2, 2, 1.2])
+col_left, col_center, col_right = st.columns([1.5, 2, 1.2])
 
 with col_left:
-    if st.button("✏️ جديد", help="بدء محادثة جديدة"):
-        st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… كيف أقدر أساعدك اليوم؟"}]
-        st.rerun()
+    st.markdown("""
+    <div class="top-left">
+        <span class="heart">❤️</span>
+        <span class="app-name">نبراس</span>
+        <span class="app-sub">Nibras</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col_center:
-    st.markdown('<div class="top-center"><p>مساعدك الذكي – بسيط، سريع، واضح</p></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="top-center">
+            <p>مساعدك الذكي – بسيط، سريع، واضح</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 with col_right:
     with st.popover("📋 المحادثات السابقة"):
@@ -146,7 +187,6 @@ if user_input:
 
         with st.spinner("🔍 جاري البحث والتفكير..."):
             try:
-                # تعليمات النظام
                 system_prompt = """
 أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح.
 
@@ -157,7 +197,6 @@ if user_input:
 - كن دقيقاً ومباشراً.
 """
 
-                # استخدام Responses API (الطريقة الصحيحة للبحث)
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     tools=[{"type": "web_search"}],
@@ -173,7 +212,6 @@ if user_input:
 
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-                # حفظ المحادثة
                 if "all_chats" not in st.session_state:
                     st.session_state.all_chats = []
                 st.session_state.all_chats.append({
@@ -181,7 +219,6 @@ if user_input:
                     "messages": st.session_state.chat_history.copy()
                 })
 
-                # تحويل الرد إلى صوت
                 try:
                     speech = client.audio.speech.create(
                         model="tts-1",
