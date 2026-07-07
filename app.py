@@ -168,8 +168,8 @@ st.markdown("""
     font-size: 17px;
     padding: 10px;
     background: #ffffff;
-    color: #555555;
-    font-weight: 700;
+    color: #000000;
+    font-weight: bold;
     border-radius: 30px;
 }
 .input-box input::placeholder {
