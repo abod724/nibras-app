@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# -------------------------- المفتاح الوحيد --------------------------
+# -------------------------- المفتاح --------------------------
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 
 if not API_KEY:
@@ -20,7 +20,7 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- CSS (واجهة بيضاء وسوداء) --------------------------
+# -------------------------- CSS --------------------------
 st.markdown("""
 <style>
 * {
@@ -146,30 +146,30 @@ if user_input:
 
         with st.spinner("🔍 جاري البحث والتفكير..."):
             try:
-                # تعليمات صارمة للبحث المدمج
+                # تعليمات النظام
                 system_prompt = """
-🔥 **تعليمات مهمة**:
-- أنت الآن متصل بالبحث في الإنترنت.
-- **تجاهل تماماً** أي معرفة لديك قبل سنة 2025.
-- **استخدم فقط** نتائج البحث في إجابتك.
-- إذا لم تجد نتيجة، قل: «ليس لدي معلومات محدثة عن هذا الموضوع».
-- لا تذكر كلمات مثل "بحث" أو "مصادر" أو "معلومات محدثة".
-- اكتب بأسلوب طبيعي، كأنك تتحدث مع صديق.
+أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح.
+
+🎯 أسلوبك:
+- اكتب وكأنك تتحدث مع صديق، بلغة عربية سليمة.
+- استخدم معلومات البحث المقدمة لك.
+- لا تذكر أبداً أنك استخدمت "بحث" أو "مصادر".
+- كن دقيقاً ومباشراً.
 """
 
-                # استخدام أداة web_search المدمجة في OpenAI
-                response = client.chat.completions.create(
+                # استخدام Responses API (الطريقة الصحيحة للبحث)
+                response = client.responses.create(
                     model="gpt-4o-mini",
-                    messages=[
+                    tools=[{"type": "web_search"}],
+                    input=[
                         {"role": "system", "content": system_prompt},
                         *st.session_state.chat_history
                     ],
-                    tools=[{"type": "web_search"}],
-                    max_tokens=600,
+                    max_output_tokens=600,
                     temperature=0.7
                 )
 
-                answer = response.choices[0].message.content
+                answer = response.output_text
 
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
