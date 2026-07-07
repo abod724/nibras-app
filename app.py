@@ -137,7 +137,7 @@ user_input = st.chat_input(
     accept_audio=True
 )
 
-# -------------------------- معالجة الإدخال (باستخدام Responses API) --------------------------
+# -------------------------- معالجة الإدخال --------------------------
 if user_input:
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
@@ -146,12 +146,26 @@ if user_input:
 
         with st.spinner("🔍 جاري البحث والتفكير..."):
             try:
+                # تعليمات نبراس بأسلوب طبيعي
+                system_prompt = """
+أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح، مثل محادثة طبيعية بين شخصين.
+
+🎯 أسلوبك:
+- اكتب وكأنك تتحدث مع صديق، بلغة عربية سليمة ولكن غير رسمية.
+- لا تذكر أبداً أنك استخدمت "بحث" أو "مصادر" أو "معلومات محدثة".
+- إذا كنت تعرف المعلومة، اكتبها مباشرة بدون مقدمات.
+- استخدم نقاطاً مختصرة فقط عند الحاجة.
+- كن دقيقاً ومباشراً، وأعطي المعلومة الرئيسية أولاً.
+
+📌 تذكر: أنت مجرد مساعد ذكي، لست موقع أخبار، ولا تذكر المصادر أبداً.
+"""
+
                 # استخدام Responses API مع أداة web_search المدمجة
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     tools=[{"type": "web_search"}],
                     input=[
-                        {"role": "system", "content": "أنت «نبراس» – مساعد ذكي، سريع، وأسلوبك بسيط وواضح. استخدم البحث في الإنترنت للحصول على معلومات محدثة."},
+                        {"role": "system", "content": system_prompt},
                         *st.session_state.chat_history
                     ],
                     max_output_tokens=500,
@@ -160,10 +174,7 @@ if user_input:
 
                 answer = response.output_text
 
-                # إضافة مصدر البحث (اختياري)
-                if hasattr(response, 'output') and response.output:
-                    answer += "\n\n🔍 *معلومات محدثة من البحث*"
-
+                # لا نضيف أي شيء للرد
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
                 # حفظ المحادثة
