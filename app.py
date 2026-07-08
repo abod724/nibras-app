@@ -1,315 +1,332 @@
 import streamlit as st
 from openai import OpenAI
-import os
-from datetime import datetime
-from dotenv import load_dotenv
-import requests
-import json
 import base64
+from datetime import datetime
+import re
+import json
+import os
 
-# ============================
-#  تحميل المفاتيح
-# ============================
-load_dotenv()
+# -------------------------- إعدادات الصفحة --------------------------
+st.set_page_config(
+    page_title="نبراس",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_SEARCH_ENGINE_ID = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
-
-# ============================
-#  إعدادات الصفحة
-# ============================
-st.set_page_config(page_title="نبراس", page_icon="✍️", layout="wide")
-
-# ============================
-#  التحقق من المفاتيح
-# ============================
-if not OPENAI_API_KEY:
-    st.error("⚠️ مفتاح OpenAI غير موجود")
-    st.stop()
-
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-# ============================
-#  ملف الذاكرة
-# ============================
+# -------------------------- ملف الذاكرة الدائمة --------------------------
 MEMORY_FILE = "memory.json"
 
 def load_memory():
     if os.path.exists(MEMORY_FILE):
-        try:
-            with open(MEMORY_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"users": {}}
 
-def save_memory(data):
-    try:
-        with open(MEMORY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except:
-        pass
+def save_memory(memory):
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(memory, f, ensure_ascii=False, indent=2)
 
-if "memory" not in st.session_state:
-    st.session_state.memory = load_memory()
+# -------------------------- ذاكرة الجلسة --------------------------
+if "user_name" not in st.session_state:
+    st.session_state.user_name = None
 
-user_id = "default_user"
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [{"role": "assistant", "content": "مرحبًا، أنا نبراس… ما هو اسمك؟"}]
 
-if user_id not in st.session_state.memory:
-    st.session_state.memory[user_id] = []
+if "all_chats" not in st.session_state:
+    st.session_state.all_chats = []
 
-if "messages" not in st.session_state:
-    if st.session_state.memory[user_id]:
-        st.session_state.messages = st.session_state.memory[user_id]
-    else:
-        st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس"}]
+memory = load_memory()
 
-def save_current_memory():
-    st.session_state.memory[user_id] = st.session_state.messages
-    save_memory(st.session_state.memory)
+# -------------------------- المفتاح --------------------------
+API_KEY = st.secrets.get("OPENAI_API_KEY")
 
-# ============================
-#  دالة البحث في الويب
-# ============================
-def search_web(query):
-    if not GOOGLE_API_KEY or not GOOGLE_SEARCH_ENGINE_ID:
-        return ""
-    
-    url = "https://www.googleapis.com/customsearch/v1"
-    params = {
-        "key": GOOGLE_API_KEY,
-        "cx": GOOGLE_SEARCH_ENGINE_ID,
-        "q": query,
-        "num": 3
-    }
-    
-    try:
-        response = requests.get(url, params=params, timeout=5)
-        data = response.json()
-        
-        if "items" in data:
-            results = []
-            for item in data["items"][:3]:
-                snippet = item.get("snippet", "")
-                if snippet:
-                    results.append(snippet)
-            return "\n".join(results) if results else ""
-        return ""
-    except:
-        return ""
+if not API_KEY:
+    st.error("🔴 المفتاح غير مضاف في إعدادات Streamlit")
+    st.stop()
 
-# ============================
-#  CSS (بدون تغيير الشكل)
-# ============================
+client = OpenAI(api_key=API_KEY)
+
+# -------------------------- الشريط العلوي (نظيف) --------------------------
 st.markdown("""
 <style>
+* {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+.stApp {
+    background: #ffffff;
+    color: #1a1a1a;
+}
 #MainMenu, footer, header {visibility: hidden;}
 
-/* الشريط العلوي */
+/* شريط علوي نظيف */
 .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 20px;
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
+    background: #ffffff;
+    padding: 8px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    height: 50px;
 }
-
-.icon-btn {
-    background: transparent !important;
+.top-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.top-left button {
+    background: none !important;
     border: none !important;
-    padding: 4px 6px !important;
     font-size: 20px !important;
+    padding: 4px 8px !important;
     cursor: pointer;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
 }
-
-.chat-container {
-    margin-top: 65px;
-    padding: 10px 20px;
-    max-width: 850px;
-    margin-left: auto;
-    margin-right: auto;
+.top-left button:hover {
+    background: #f3f4f6 !important;
+    border-radius: 8px !important;
 }
-
-/* تنسيق أيقونات الصوت والصورة داخل مربع الكتابة */
-.stChatInput > div {
+.top-right {
     display: flex;
     align-items: center;
     gap: 8px;
 }
-
-.stChatInput input {
-    flex: 1;
-}
-
-.stChatInput .input-tools {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.stChatInput .input-tools button {
-    background: transparent;
-    border: none;
-    font-size: 18px;
+.top-right button {
+    background: none !important;
+    border: none !important;
+    font-size: 20px !important;
+    padding: 4px 8px !important;
     cursor: pointer;
-    color: #6b7280;
-    padding: 4px;
-    border-radius: 6px;
+    color: #1a1a1a !important;
 }
-.stChatInput .input-tools button:hover {
+.top-right button:hover {
+    background: #f3f4f6 !important;
+    border-radius: 8px !important;
+}
+.chat-area {
+    max-width: 850px;
+    margin: 70px auto 100px;
+    padding: 0 20px;
+}
+.msg {
+    padding: 12px 16px;
+    margin: 8px 0;
+    border-radius: 16px;
+    max-width: 80%;
+    line-height: 1.6;
+    font-size: 15px;
+}
+.user {
+    background: #1a1a1a;
+    color: #ffffff;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+.bot {
     background: #f3f4f6;
+    color: #1a1a1a;
+    margin-right: auto;
+    border-bottom-left-radius: 4px;
+}
+div[data-testid="stChatInput"] {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 2px 12px !important;
+}
+div[data-testid="stChatInput"] input {
+    color: #1a1a1a !important;
+    font-weight: 500 !important;
+    background: #ffffff !important;
+}
+div[data-testid="stChatInput"] button {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+}
+/* إخفاء أيقونات Streamlit الزائدة */
+.st-emotion-cache-1v0mbdj {
+    display: none !important;
+}
+/* تنسيق المنسدلة */
+div[data-testid="stPopover"] button {
+    font-size: 20px !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+}
+div[data-testid="stPopover"] button:hover {
+    background: #f3f4f6 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================
-#  الشريط العلوي (ثابت)
-# ============================
+# -------------------------- الشريط العلوي (نظيف) --------------------------
+st.markdown('<div class="top-bar">', unsafe_allow_html=True)
+
+# يسار: أيقونة المحادثات
 st.markdown("""
-<div class="top-bar">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">●</span>
-        <span style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">نبراس</span>
-        <span style="font-size: 12px; color: #6b7280;">- صديقك الذكي</span>
-    </div>
-    <div>
-        <span class="icon-btn">☰</span>
+<div class="top-left">
+    <button id="chat-btn" style="font-size: 20px;">💬</button>
+</div>
+""", unsafe_allow_html=True)
+
+# يمين: أيقونة الشرطتين (القائمة المنسدلة)
+with st.container():
+    col_right, _ = st.columns([0.1, 0.9])
+    with col_right:
+        with st.popover("☰"):
+            st.markdown("### 📋 المحادثات")
+            if st.button("➕ جديدة", use_container_width=True):
+                user_name = st.session_state.user_name if st.session_state.user_name else ""
+                st.session_state.chat_history = [{"role": "assistant", "content": f"مرحبًا بعودتك {user_name}… كيف أقدر أساعدك اليوم؟"}]
+                st.rerun()
+            st.markdown("---")
+            if st.session_state.all_chats:
+                for i, c in enumerate(st.session_state.all_chats[::-1]):
+                    if st.button(f"💬 {c['date']}", use_container_width=True, key=f"chat_top_{i}"):
+                        st.session_state.chat_history = c["messages"]
+                        st.session_state.user_name = c.get("user_name", st.session_state.user_name)
+                        st.rerun()
+            else:
+                st.info("ما فيه محادثات")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------- عرض المحادثة --------------------------
+st.markdown('<div class="chat-area">', unsafe_allow_html=True)
+
+for msg in st.session_state.chat_history:
+    if msg["role"] == "user":
+        st.markdown(f'<div class="msg user">{msg["content"]}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------- استخراج الاسم --------------------------
+if st.session_state.user_name is None:
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "user":
+        last_msg = st.session_state.chat_history[-1]["content"]
+        match = re.search(r"اسمي\s+(\w+)", last_msg)
+        if match:
+            st.session_state.user_name = match.group(1)
+            if st.session_state.user_name not in memory["users"]:
+                memory["users"][st.session_state.user_name] = {
+                    "first_seen": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "interests": [],
+                    "conversations": []
+                }
+            save_memory(memory)
+            st.session_state.chat_history.append({"role": "assistant", "content": f"أهلاً بك {st.session_state.user_name}! أنا سعيد بلقائك 🤍"})
+            st.rerun()
+
+# -------------------------- مربع الكتابة (مع اسم نبراس) --------------------------
+st.markdown("""
+<div style="max-width: 850px; margin: 0 auto 10px; padding: 0 20px;">
+    <div style="text-align: center; font-size: 13px; color: #9ca3af;">
+        نبراس – صديقك الذكي
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ============================
-#  عرض المحادثة (ثابت)
-# ============================
-st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ============================
-#  مربع الكتابة مع أيقونات الصوت والصورة
-# ============================
-
-# عمودين: الأول للكتابة، الثاني للأيقونات
-col_chat, col_tools = st.columns([6, 1])
-
-with col_chat:
-    prompt = st.chat_input("اكتب سؤالك هنا...")
-
-with col_tools:
-    st.markdown("""
-    <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 8px;">
-        <button id="audio_btn" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280;">🎤</button>
-        <button id="image_btn" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280;">📷</button>
-    </div>
-    """, unsafe_allow_html=True)
-
-# معالجة الصوت (مخفي)
-audio_value = st.audio_input("🎤", key="audio_input", label_visibility="collapsed")
-if audio_value:
-    with st.spinner("🔄 جاري تحويل الصوت..."):
-        try:
-            with open("temp_audio.mp3", "wb") as f:
-                f.write(audio_value.getvalue())
-            
-            with open("temp_audio.mp3", "rb") as f:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=f
-                )
-            
-            st.session_state.audio_text = transcript.text
-            st.rerun()
-        except Exception as e:
-            st.error(f"⚠️ {str(e)}")
-
-# معالجة الصورة (مخفي)
-uploaded_file = st.file_uploader(
-    "📷",
-    type=["jpg", "jpeg", "png", "gif", "webp"],
-    label_visibility="collapsed",
-    key="image_uploader"
+user_input = st.chat_input(
+    "اكتب سؤالك هنا...",
+    accept_file=True,
+    file_type=["jpg", "jpeg", "png", "pdf", "csv", "txt"],
+    accept_audio=True
 )
 
-if uploaded_file:
-    with st.spinner("🔄 جاري تحليل الصورة..."):
-        try:
-            image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
-            
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "وصف هذه الصورة بالتفصيل:"},
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
-                            }
-                        ]
-                    }
-                ]
-            )
-            
-            image_description = response.choices[0].message.content
-            st.session_state.messages.append({"role": "user", "content": f"📷 {image_description}"})
-            save_current_memory()
-            st.rerun()
-        except Exception as e:
-            st.error(f"⚠️ {str(e)}")
+# -------------------------- معالجة الإدخال --------------------------
+if user_input:
+    query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
+    
+    files_text = ""
+    if hasattr(user_input, 'files') and user_input.files:
+        for file in user_input.files:
+            files_text += f"\n[ملف مرفوع: {file.name}]"
+    
+    full_query = query + files_text
+    
+    if full_query.strip():
+        st.session_state.chat_history.append({"role": "user", "content": full_query})
 
-# ============================
-#  معالجة الكتابة
-# ============================
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    save_current_memory()
-    
-    with st.chat_message("user"):
-        st.write(prompt)
-    
-    with st.spinner("🔍 نبراس يبحث..."):
-        search_results = search_web(prompt)
-    
-    system_prompt = f"""
-    أنت نبراس، مساعد ذكي يتحدث باللهجة السعودية العامية.
-    استخدم المعلومات التالية للرد:
-    {search_results if search_results else "ما لقيت معلومات محدثة."}
-    اختصر الرد ولا تتجاوز 50 كلمة.
-    """
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *st.session_state.messages
-            ],
-            max_tokens=300
-        )
-        answer = response.choices[0].message.content
-    except Exception as e:
-        answer = f"⚠️ صار خطأ: {str(e)}"
-    
-    st.session_state.messages.append({"role": "assistant", "content": answer})
-    save_current_memory()
-    
-    with st.chat_message("assistant"):
-        st.write(answer)
-    
-    if "audio_text" in st.session_state:
-        del st.session_state.audio_text
-    
-    st.rerun()
+        with st.spinner("🔍 جاري البحث..."):
+            try:
+                user_info = ""
+                if st.session_state.user_name and st.session_state.user_name in memory["users"]:
+                    user_data = memory["users"][st.session_state.user_name]
+                    interests = user_data.get("interests", [])
+                    if interests:
+                        user_info = f"\n📌 اهتمامات المستخدم: {', '.join(interests)}"
+
+                system_prompt = f"""
+أنت نبراس، صديق ذكي تتحدث مع شخص تحبه.
+
+🧠 **شخصيتك**:
+- أنت صديق وليس برنامج أو موقع أخبار.
+- اسم المستخدم هو: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه بعد"}
+{user_info}
+
+🗣️ **أسلوبك**:
+- تحدث كأنك جالس مع صديق.
+- نادِ المستخدم باسمه.
+- لا تستخدم كلمات رسمية.
+
+🔥 **قاعدة مهمة**:
+- ابحث في الويب عن إجابة سؤال المستخدم.
+- لا تستخدم معرفتك القديمة (قبل 2025).
+- لخص المعلومة بأسلوبك الخاص.
+"""
+
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": system_prompt},
+                        *st.session_state.chat_history
+                    ],
+                    tools=[{"type": "web_search"}],
+                    max_output_tokens=600,
+                )
+
+                answer = response.output_text
+
+                st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+                if st.session_state.user_name and st.session_state.user_name in memory["users"]:
+                    memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                    memory["users"][st.session_state.user_name]["conversations"].append({
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "messages": st.session_state.chat_history[-2:]
+                    })
+                    save_memory(memory)
+
+                st.session_state.all_chats.append({
+                    "date": datetime.now().strftime("%H:%M - %d/%m"),
+                    "messages": st.session_state.chat_history.copy(),
+                    "user_name": st.session_state.user_name
+                })
+
+                try:
+                    speech = client.audio.speech.create(
+                        model="tts-1",
+                        voice="alloy",
+                        input=answer[:500],
+                        response_format="mp3"
+                    )
+                    audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                    st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+                except Exception:
+                    pass
+
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"❌ خطأ: {str(e)}")
