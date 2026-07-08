@@ -120,7 +120,7 @@ for msg in st.session_state.chat_history:
         st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- مربع الكتابة (مع الصوت ورفع الملفات) --------------------------
+# -------------------------- مربع الكتابة --------------------------
 user_input = st.chat_input(
     "اكتب سؤالك هنا...",
     accept_file=True,
@@ -130,10 +130,8 @@ user_input = st.chat_input(
 
 # -------------------------- معالجة الإدخال --------------------------
 if user_input:
-    # استخراج النص
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
-    # معالجة الملفات المرفوعة
     files_text = ""
     if hasattr(user_input, 'files') and user_input.files:
         for file in user_input.files:
@@ -146,11 +144,11 @@ if user_input:
 
         with st.spinner("🔍 جاري البحث..."):
             try:
-                # ===== البحث مع السياق =====
+                # ===== التعديل المهم هنا =====
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": "أنت نبراس، مساعد ذكي. أجب ببساطة ووضوح."},
+                        {"role": "system", "content": "أنت نبراس، مساعد ذكي. **تجاهل تماماً أي معرفة لديك قبل سنة 2025**. استخدم فقط المعلومات المحدثة من البحث. إذا لم تجد إجابة في البحث، قل: 'ليس لدي معلومات محدثة'."},
                         *st.session_state.chat_history
                     ],
                     tools=[{"type": "web_search"}],
@@ -161,7 +159,6 @@ if user_input:
 
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-                # تحويل الرد إلى صوت
                 try:
                     speech = client.audio.speech.create(
                         model="tts-1",
