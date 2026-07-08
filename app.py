@@ -100,11 +100,13 @@ def search_web(query):
         return ""
 
 # ============================
-#  CSS
+#  CSS (بدون تغيير الشكل)
 # ============================
 st.markdown("""
 <style>
 #MainMenu, footer, header {visibility: hidden;}
+
+/* الشريط العلوي */
 .top-bar {
     display: flex;
     justify-content: space-between;
@@ -118,6 +120,7 @@ st.markdown("""
     right: 0;
     z-index: 1000;
 }
+
 .icon-btn {
     background: transparent !important;
     border: none !important;
@@ -126,6 +129,7 @@ st.markdown("""
     cursor: pointer;
     color: #1a1a1a;
 }
+
 .chat-container {
     margin-top: 65px;
     padding: 10px 20px;
@@ -133,11 +137,41 @@ st.markdown("""
     margin-left: auto;
     margin-right: auto;
 }
+
+/* تنسيق أيقونات الصوت والصورة داخل مربع الكتابة */
+.stChatInput > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stChatInput input {
+    flex: 1;
+}
+
+.stChatInput .input-tools {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.stChatInput .input-tools button {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px;
+    border-radius: 6px;
+}
+.stChatInput .input-tools button:hover {
+    background: #f3f4f6;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================
-#  الشريط العلوي
+#  الشريط العلوي (ثابت)
 # ============================
 st.markdown("""
 <div class="top-bar">
@@ -153,7 +187,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================
-#  عرض المحادثة
+#  عرض المحادثة (ثابت)
 # ============================
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
@@ -164,104 +198,98 @@ for msg in st.session_state.messages:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================
-#  أدوات الإدخال
+#  مربع الكتابة مع أيقونات الصوت والصورة
 # ============================
-col1, col2, col3 = st.columns([1, 6, 1])
 
-with col1:
-    audio_value = st.audio_input("🎤", key="audio_input")
-    if audio_value:
-        with st.spinner("🔄 جاري تحويل الصوت..."):
-            try:
-                with open("temp_audio.mp3", "wb") as f:
-                    f.write(audio_value.getvalue())
-                
-                with open("temp_audio.mp3", "rb") as f:
-                    transcript = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=f
-                    )
-                
-                st.session_state.audio_text = transcript.text
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ {str(e)}")
+# عمودين: الأول للكتابة، الثاني للأيقونات
+col_chat, col_tools = st.columns([6, 1])
 
-with col2:
-    default_text = st.session_state.get("audio_text", "")
+with col_chat:
     prompt = st.chat_input("اكتب سؤالك هنا...")
 
-with col3:
-    uploaded_file = st.file_uploader(
-        "📷",
-        type=["jpg", "jpeg", "png", "gif", "webp"],
-        label_visibility="collapsed",
-        key="image_uploader"
-    )
-    
-    if uploaded_file:
-        with st.spinner("🔄 جاري تحليل الصورة..."):
-            try:
-                image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
-                
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": "وصف هذه الصورة بالتفصيل:"},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
-                                }
-                            ]
-                        }
-                    ]
+with col_tools:
+    st.markdown("""
+    <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 8px;">
+        <button id="audio_btn" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280;">🎤</button>
+        <button id="image_btn" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280;">📷</button>
+    </div>
+    """, unsafe_allow_html=True)
+
+# معالجة الصوت (مخفي)
+audio_value = st.audio_input("🎤", key="audio_input", label_visibility="collapsed")
+if audio_value:
+    with st.spinner("🔄 جاري تحويل الصوت..."):
+        try:
+            with open("temp_audio.mp3", "wb") as f:
+                f.write(audio_value.getvalue())
+            
+            with open("temp_audio.mp3", "rb") as f:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=f
                 )
-                
-                image_description = response.choices[0].message.content
-                st.session_state.messages.append({"role": "user", "content": f"[صورة] {image_description}"})
-                save_current_memory()
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ {str(e)}")
+            
+            st.session_state.audio_text = transcript.text
+            st.rerun()
+        except Exception as e:
+            st.error(f"⚠️ {str(e)}")
+
+# معالجة الصورة (مخفي)
+uploaded_file = st.file_uploader(
+    "📷",
+    type=["jpg", "jpeg", "png", "gif", "webp"],
+    label_visibility="collapsed",
+    key="image_uploader"
+)
+
+if uploaded_file:
+    with st.spinner("🔄 جاري تحليل الصورة..."):
+        try:
+            image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
+            
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "وصف هذه الصورة بالتفصيل:"},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
+                            }
+                        ]
+                    }
+                ]
+            )
+            
+            image_description = response.choices[0].message.content
+            st.session_state.messages.append({"role": "user", "content": f"📷 {image_description}"})
+            save_current_memory()
+            st.rerun()
+        except Exception as e:
+            st.error(f"⚠️ {str(e)}")
 
 # ============================
-#  ========== هنا تعليمات نبراس ==========
 #  معالجة الكتابة
 # ============================
 if prompt:
-    # إضافة سؤال المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
     save_current_memory()
     
     with st.chat_message("user"):
         st.write(prompt)
     
-    # البحث في الويب
     with st.spinner("🔍 نبراس يبحث..."):
         search_results = search_web(prompt)
     
-    # ============================
-    #  تعليمات نبراس (اللهجة السعودية + البحث)
-    # ============================
     system_prompt = f"""
     أنت نبراس، مساعد ذكي يتحدث باللهجة السعودية العامية.
-
-    🎯 تعليمات مهمة جداً:
-    1. **تحدث باللهجة السعودية العامية** (مثل: وش، إيش، كيف الحال، تمام، خلاص، طيب، ماعندي فكرة)
-    2. **ابحث في الويب عن المعلومات الحديثة** واستخدمها في الرد
-    3. **اختصر قدر الإمكان** (جمل قصيرة، نقاط مختصرة)
-    4. **لا تتجاوز 50 كلمة** في الرد الواحد
-    5. **إذا ما عندك معلومة**، قل: "ماعندي فكرة والله"
-
-    📌 معلومات من البحث:
-    {search_results if search_results else "ما لقيت معلومات محدثة من البحث."}
-
-    رد على سؤال المستخدم باللهجة السعودية العامية وباختصار:
+    استخدم المعلومات التالية للرد:
+    {search_results if search_results else "ما لقيت معلومات محدثة."}
+    اختصر الرد ولا تتجاوز 50 كلمة.
     """
-
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -275,7 +303,6 @@ if prompt:
     except Exception as e:
         answer = f"⚠️ صار خطأ: {str(e)}"
     
-    # إضافة رد نبراس
     st.session_state.messages.append({"role": "assistant", "content": answer})
     save_current_memory()
     
