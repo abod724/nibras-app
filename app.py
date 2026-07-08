@@ -120,18 +120,33 @@ for msg in st.session_state.chat_history:
         st.markdown(f'<div class="msg bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------------- مربع الكتابة --------------------------
-user_input = st.chat_input("اكتب سؤالك هنا...")
+# -------------------------- مربع الكتابة (مع الصوت ورفع الملفات) --------------------------
+user_input = st.chat_input(
+    "اكتب سؤالك هنا...",
+    accept_file=True,
+    file_type=["jpg", "jpeg", "png", "pdf", "csv", "txt"],
+    accept_audio=True
+)
 
 # -------------------------- معالجة الإدخال --------------------------
 if user_input:
+    # استخراج النص
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
-    if query:
-        st.session_state.chat_history.append({"role": "user", "content": query})
+    
+    # معالجة الملفات المرفوعة
+    files_text = ""
+    if hasattr(user_input, 'files') and user_input.files:
+        for file in user_input.files:
+            files_text += f"\n[ملف مرفوع: {file.name}]"
+    
+    full_query = query + files_text
+    
+    if full_query.strip():
+        st.session_state.chat_history.append({"role": "user", "content": full_query})
 
         with st.spinner("🔍 جاري البحث..."):
             try:
-                # ===== كود البحث الصحيح =====
+                # ===== البحث مع السياق =====
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
@@ -145,6 +160,20 @@ if user_input:
                 answer = response.output_text
 
                 st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+                # تحويل الرد إلى صوت
+                try:
+                    speech = client.audio.speech.create(
+                        model="tts-1",
+                        voice="alloy",
+                        input=answer[:500],
+                        response_format="mp3"
+                    )
+                    audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                    st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+                except Exception:
+                    pass
+
                 st.rerun()
 
             except Exception as e:
