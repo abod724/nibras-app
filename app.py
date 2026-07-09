@@ -287,22 +287,23 @@ if user_input:
 - لخص المعلومة بأسلوبك الخاص.
 """
 
-               answer = ask_ai(st.session_state.chat_history)
+ answer = ask_all(st.session_state.chat_history)
+
 st.session_state.chat_history.append({"role": "assistant", "content": "..."})
 
 if st.session_state.user_name and st.session_state.user_name in memory.get("users", {}):
     # تحديث آخر ظهور
-    memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # إضافة المحادثة الجديدة
     memory["users"][st.session_state.user_name]["conversations"].append({
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "messages": st.session_state.chat_history[-2:]
     })
 else:
     if st.session_state.user_name:
-        # إذا المستخدم جديد، أنشئ مدخله
+        # إنشاء مستخدم جديد
         memory["users"][st.session_state.user_name] = {
-            "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "conversations": []
         }
 
