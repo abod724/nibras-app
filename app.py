@@ -169,38 +169,38 @@ div[data-testid="stPopover"] button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- الشريط العلوي (نظيف) --------------------------
+# --- (شريط العلوي (نظيف)) ---
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 
-# يسار: أيقونة المحادثات
-st.markdown("""
+# يسار: أيقونة المحادثات (⊕)
+st.markdown(""" 
 <div class="top-left">
-    <button id="chat-btn" style="font-size: 20px;">💬</button>
+    <button class="icon-btn" onclick="location.reload()" title="محادثة جديدة">⊕</button>
 </div>
 """, unsafe_allow_html=True)
 
-# يمين: أيقونة الشرطتين (القائمة المنسدلة)
+# يمين: أيقونة القائمة المنسدلة (☰)
 with st.container():
     col_right, _ = st.columns([0.1, 0.9])
     with col_right:
         with st.popover("☰"):
-            st.markdown("### 📋 المحادثات")
-            if st.button("➕ جديدة", use_container_width=True):
-                user_name = st.session_state.user_name if st.session_state.user_name else ""
-                st.session_state.chat_history = [{"role": "assistant", "content": f"مرحبًا بعودتك {user_name}… كيف أقدر أساعدك اليوم؟"}]
+            st.markdown("### 📋 المحادثات السابقة")
+            
+            if st.button("➕ محادثة جديدة", use_container_width=True):
+                st.session_state.chat_history = [{"role": "assistant", "content": "مرحباً، أنا نبراس"}]
                 st.rerun()
+            
             st.markdown("---")
-            if st.session_state.all_chats:
-                for i, c in enumerate(st.session_state.all_chats[::-1]):
-                    if st.button(f"💬 {c['date']}", use_container_width=True, key=f"chat_top_{i}"):
-                        st.session_state.chat_history = c["messages"]
-                        st.session_state.user_name = c.get("user_name", st.session_state.user_name)
+            
+            if "all_chats" in st.session_state and st.session_state.all_chats:
+                for i, chat in enumerate(st.session_state.all_chats):
+                    if st.button(f"💬 محادثة {i+1}", use_container_width=True):
+                        st.session_state.chat_history = chat["messages"]
                         st.rerun()
             else:
-                st.info("ما فيه محادثات")
+                st.info("لا توجد محادثات سابقة")
 
 st.markdown('</div>', unsafe_allow_html=True)
-
 # -------------------------- عرض المحادثة --------------------------
 st.markdown('<div class="chat-area">', unsafe_allow_html=True)
 
