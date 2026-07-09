@@ -308,7 +308,6 @@ else:
             "messages": st.session_state.chat_history[-2:]
         }]
     }
-    })
 else:
     memory["users"][user_key] = {
         "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
