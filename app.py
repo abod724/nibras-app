@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="نبراس",
     page_icon="💬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # ============================================================
@@ -52,42 +52,76 @@ if "sessions" not in st.session_state:
 memory = load_memory()
 
 # ============================================================
-# 4. الشريط الجانبي (القائمة والمحادثات والصوت)
-# ============================================================
-with st.sidebar:
-    st.markdown("## 💬 نبراس")
-    st.markdown("---")
-    
-    if st.button("➕ محادثة جديدة", use_container_width=True):
-        st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
-        st.rerun()
-    
-    st.markdown("### 📋 المحادثات السابقة")
-    if st.session_state.sessions:
-        for i, s in enumerate(st.session_state.sessions[::-1]):
-            if st.button(f"💬 {s['date']}", key=f"side_{i}", use_container_width=True):
-                st.session_state.messages = s["messages"]
-                st.rerun()
-    else:
-        st.info("لا توجد محادثات سابقة")
-    
-    st.markdown("---")
-    st.markdown("### 🎤 الصوت")
-    if st.button("🎤 اضغط للتحدث", use_container_width=True):
-        st.warning("سيتم إضافة التسجيل الصوتي قريباً")
-
-# ============================================================
-# 5. واجهة المحادثة
+# 4. CSS - واجهة ChatGPT بالضبط
 # ============================================================
 st.markdown("""
 <style>
+    /* إخفاء عناصر Streamlit */
     #MainMenu, footer, header { visibility: hidden; }
     .stApp { background: #f7f7f8; }
+
+    /* شريط علوي - مثل ChatGPT */
+    .top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(12px);
+        padding: 8px 24px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        height: 48px;
+    }
+    .top-bar .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #1a1a1a;
+    }
+    .top-bar .brand .icon {
+        background: #1a1a1a;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    .top-bar .actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .top-bar .actions button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        color: #444;
+        transition: 0.2s;
+    }
+    .top-bar .actions button:hover {
+        background: #f0f0f0;
+    }
+
+    /* منطقة المحادثة */
     .chat-container {
         max-width: 750px;
-        margin: 20px auto 60px;
+        margin: 65px auto 80px;
         padding: 0 20px;
     }
+
+    /* رسائل - مثل ChatGPT */
     .msg-user {
         padding: 10px 16px;
         margin: 4px 0 8px auto;
@@ -115,42 +149,91 @@ st.markdown("""
         box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         clear: both;
     }
+
+    /* الصور */
     .chat-image {
         max-width: 250px;
         border-radius: 12px;
         margin: 6px 0;
         border: 1px solid #e5e5e5;
     }
+
+    /* مربع الإدخال - مثل ChatGPT */
     .stChatInput {
         border-radius: 30px !important;
         border: 1px solid #e5e5e5 !important;
         background: #ffffff !important;
         padding: 2px 12px !important;
         box-shadow: 0 2px 12px rgba(0,0,0,0.02) !important;
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 750px !important;
+        max-width: 90% !important;
+        z-index: 999 !important;
     }
     .stChatInput input {
         border-radius: 30px !important;
-        padding: 10px 16px !important;
+        padding: 12px 16px !important;
         font-size: 15px !important;
         background: transparent !important;
     }
     .stChatInput button {
         background: #1a1a1a !important;
         border-radius: 50% !important;
-        padding: 4px 10px !important;
+        padding: 4px 12px !important;
         color: white !important;
         border: none !important;
     }
+
+    /* تذييل */
     .footer {
         text-align: center;
         color: #aaa;
         font-size: 12px;
-        padding: 16px 0 8px;
+        padding: 16px 0 80px;
         border-top: 1px solid #f0f0f0;
         margin-top: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# ============================================================
+# 5. الشريط العلوي
+# ============================================================
+col1, col2, col3 = st.columns([2, 6, 2])
+with col1:
+    st.markdown("""
+    <div class="top-bar">
+        <div class="brand">
+            <span class="icon">💬</span> نبراس
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# الأزرار في الشريط العلوي باستخدام أعمدة جانبية
+with st.container():
+    col_left, col_center, col_right = st.columns([1, 6, 1])
+    with col_left:
+        with st.popover("☰"):
+            st.markdown("### 📋 المحادثات")
+            if st.button("➕ محادثة جديدة", use_container_width=True):
+                st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
+                st.rerun()
+            st.markdown("---")
+            if st.session_state.sessions:
+                for i, s in enumerate(st.session_state.sessions[::-1]):
+                    if st.button(f"💬 {s['date']}", key=f"top_{i}", use_container_width=True):
+                        st.session_state.messages = s["messages"]
+                        st.rerun()
+            else:
+                st.info("لا توجد محادثات")
+    
+    with col_right:
+        if st.button("➕", key="new_chat_top"):
+            st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
+            st.rerun()
 
 # ============================================================
 # 6. عرض المحادثة
@@ -183,7 +266,7 @@ if st.session_state.user_name is None:
             st.rerun()
 
 # ============================================================
-# 8. مربع الإدخال
+# 8. مربع الإدخال (مع رفع الصور)
 # ============================================================
 user_input = st.chat_input(
     "اكتب سؤالك... أو ارفع صورة",
@@ -192,18 +275,22 @@ user_input = st.chat_input(
 )
 
 # ============================================================
-# 9. معالجة الإدخال
+# 9. معالجة الإدخال (نص + صور + بحث ويب + صوت)
 # ============================================================
 if user_input:
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
+    # معالجة الصور
     uploaded_images = []
     if hasattr(user_input, 'files') and user_input.files:
         for file in user_input.files:
             try:
                 img_bytes = file.getvalue()
                 img_b64 = base64.b64encode(img_bytes).decode()
-                uploaded_images.append({"name": file.name, "data": img_b64})
+                uploaded_images.append({
+                    "name": file.name,
+                    "data": img_b64
+                })
             except:
                 pass
     
@@ -226,6 +313,7 @@ if user_input:
         with st.chat_message("assistant"):
             with st.spinner("نبراس يفكر..."):
                 try:
+                    # بحث ويب محدث
                     search_results = ""
                     try:
                         search_response = client.responses.create(
@@ -273,6 +361,7 @@ if user_input:
                         )
                     
                     answer = response.choices[0].message.content
+                    
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     st.markdown(f'<div class="msg-bot">{answer}</div>', unsafe_allow_html=True)
                     
@@ -281,6 +370,7 @@ if user_input:
                         "messages": st.session_state.messages.copy()
                     })
                     
+                    # تشغيل الصوت تلقائياً
                     try:
                         speech = client.audio.speech.create(
                             model="tts-1",
