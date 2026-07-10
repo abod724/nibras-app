@@ -255,7 +255,7 @@ files_text = ""
     
     full_query = query + files_text
     
-    if full_query.strip():
+if full_query.strip():
         st.session_state.chat_history.append({"role": "user", "content": full_query})
             
 with st.spinner("🔍 جاري البحث..."):
