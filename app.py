@@ -30,7 +30,7 @@ if not API_KEY:
 client = OpenAI(api_key=API_KEY)
 
 # ============================================================
-# 3. الذاكرة والجلسات
+# 3. الذاكرة الدائمة
 # ============================================================
 MEMORY_FILE = "memory.json"
 
@@ -59,7 +59,7 @@ if "is_typing" not in st.session_state:
 memory = load_memory()
 
 # ============================================================
-# 4. CSS - واجهة متطورة مثل ChatGPT
+# 4. CSS - واجهة احترافية مثل ChatGPT
 # ============================================================
 st.markdown("""
 <style>
@@ -71,7 +71,7 @@ st.markdown("""
         background: #f7f7f8;
     }
     
-    /* شريط علوي أنيق */
+    /* شريط علوي - بدون اسم نبراس */
     .top-bar {
         position: fixed;
         top: 0;
@@ -79,87 +79,60 @@ st.markdown("""
         right: 0;
         background: rgba(255,255,255,0.95);
         backdrop-filter: blur(12px);
-        padding: 8px 24px;
+        padding: 6px 20px;
         border-bottom: 1px solid rgba(0,0,0,0.04);
         display: flex;
         justify-content: space-between;
         align-items: center;
         z-index: 1000;
-        height: 52px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        height: 44px;
     }
     
-    .top-bar .brand {
+    .top-bar .left {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
+    }
+    
+    .top-bar .left .icon {
         font-size: 16px;
-        font-weight: 500;
         color: #1a1a1a;
-    }
-    
-    .top-bar .brand .icon {
-        background: #1a1a1a;
-        color: white;
-        border-radius: 50%;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: 600;
     }
     
     .top-bar .actions {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
     }
     
     .top-bar .actions button {
         background: transparent;
         border: none;
         cursor: pointer;
-        font-size: 18px;
-        padding: 6px;
+        font-size: 16px;
+        padding: 4px 8px;
         border-radius: 50%;
-        width: 36px;
-        height: 36px;
+        color: #444;
+        transition: 0.2s;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #444;
-        transition: 0.2s;
     }
     
     .top-bar .actions button:hover {
         background: #f0f0f0;
     }
     
-    .top-bar .actions .menu-btn {
-        font-size: 20px;
-    }
-    
-    .top-bar .actions .new-btn {
-        font-size: 18px;
-        font-weight: 300;
-        background: #f0f0f0;
-        border-radius: 50%;
-    }
-    
-    .top-bar .actions .new-btn:hover {
-        background: #e5e5e5;
-    }
-    
     /* منطقة المحادثة */
     .chat-container {
         max-width: 750px;
-        margin: 70px auto 90px;
+        margin: 60px auto 80px;
         padding: 0 20px;
     }
     
-    /* الرسائل - مثل ChatGPT تماماً */
+    /* رسائل - الصور يمين */
     .msg-user {
         padding: 10px 16px;
         margin: 4px 0 8px auto;
@@ -191,26 +164,16 @@ st.markdown("""
         clear: both;
     }
     
-    .msg-bot code {
-        background: #f4f4f4;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 14px;
+    /* الصور في المحادثة - تظهر يمين */
+    .chat-image-wrapper {
+        display: flex;
+        justify-content: flex-end;
+        margin: 4px 0 8px auto;
     }
     
-    .msg-bot pre {
-        background: #f4f4f4;
-        padding: 12px;
-        border-radius: 8px;
-        overflow-x: auto;
-        margin: 8px 0;
-    }
-    
-    /* الصور في المحادثة */
     .chat-image {
         max-width: 280px;
         border-radius: 12px;
-        margin: 6px 0;
         border: 1px solid #e5e5e5;
     }
     
@@ -262,52 +225,40 @@ st.markdown("""
     .stChatInput button {
         background: #1a1a1a !important;
         border-radius: 50% !important;
-        padding: 4px 12px !important;
+        padding: 4px 10px !important;
         color: white !important;
         border: none !important;
-        transition: 0.2s !important;
     }
     
     .stChatInput button:hover {
-        transform: scale(1.03);
         background: #333 !important;
     }
     
-    /* زر الصوت المنفصل */
+    /* زر الصوت داخل مربع الإدخال */
     .audio-btn {
-        position: fixed;
-        bottom: 28px;
-        right: 28px;
-        background: #1a1a1a;
-        color: white;
+        background: transparent;
         border: none;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
+        font-size: 18px;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 0.25s;
+        padding: 4px 8px;
+        border-radius: 50%;
+        color: #444;
+        transition: 0.2s;
     }
     
     .audio-btn:hover {
-        transform: scale(1.06);
-        background: #333;
+        background: #f0f0f0;
     }
     
     .audio-btn.recording {
-        background: #e74c3c;
+        color: #e74c3c;
         animation: pulse-ring 1.5s infinite;
     }
     
     @keyframes pulse-ring {
-        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-        70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
     }
     
     /* القائمة المنسدلة */
@@ -317,7 +268,7 @@ st.markdown("""
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.2);
+        background: rgba(0,0,0,0.15);
         z-index: 998;
         display: none;
     }
@@ -328,13 +279,13 @@ st.markdown("""
     
     .dropdown-menu {
         position: fixed;
-        top: 60px;
-        left: 20px;
+        top: 52px;
+        left: 16px;
         background: white;
         border-radius: 14px;
-        padding: 8px;
+        padding: 6px;
         z-index: 999;
-        min-width: 220px;
+        min-width: 200px;
         box-shadow: 0 8px 40px rgba(0,0,0,0.12);
         display: none;
         border: 1px solid rgba(0,0,0,0.04);
@@ -360,7 +311,7 @@ st.markdown("""
     .dropdown-menu .divider {
         height: 1px;
         background: #e5e5e5;
-        margin: 6px 10px;
+        margin: 4px 10px;
     }
     
     /* تذييل */
@@ -368,31 +319,28 @@ st.markdown("""
         text-align: center;
         color: #aaa;
         font-size: 12px;
-        padding: 20px 0 10px;
+        padding: 16px 0 8px;
         border-top: 1px solid #f0f0f0;
-        margin-top: 30px;
+        margin-top: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 5. الشريط العلوي المتطور
+# 5. الشريط العلوي (بدون اسم نبراس)
 # ============================================================
 st.markdown("""
 <div class="top-bar">
-    <div class="brand">
-        <span class="icon">💬</span> نبراس
+    <div class="left">
+        <span class="icon">💬</span>
     </div>
     <div class="actions">
-        <button class="menu-btn" onclick="toggleDropdown()">☰</button>
-        <button class="new-btn" onclick="location.reload()">＋</button>
+        <button onclick="toggleDropdown()">☰</button>
+        <button onclick="location.reload()">＋</button>
     </div>
 </div>
 
-<!-- خلفية القائمة -->
 <div class="dropdown-overlay" id="overlay" onclick="closeDropdown()"></div>
-
-<!-- القائمة المنسدلة -->
 <div class="dropdown-menu" id="dropdown">
     <div class="item" onclick="location.reload()">➕ محادثة جديدة</div>
     <div class="divider"></div>
@@ -411,7 +359,7 @@ function closeDropdown() {
 </script>
 """, unsafe_allow_html=True)
 
-# عرض المحادثات السابقة في القائمة
+# عرض المحادثات السابقة
 with st.sidebar:
     st.markdown("### 📋 المحادثات")
     if st.button("➕ محادثة جديدة", use_container_width=True):
@@ -458,7 +406,7 @@ if st.session_state.user_name is None:
             st.rerun()
 
 # ============================================================
-# 8. مربع الإدخال (مع رفع الصور)
+# 8. مربع الإدخال (مع صوت وصور)
 # ============================================================
 user_input = st.chat_input(
     "اكتب سؤالك... أو ارفع صورة",
@@ -467,88 +415,12 @@ user_input = st.chat_input(
 )
 
 # ============================================================
-# 9. زر الصوت (منفصل)
-# ============================================================
-st.markdown("""
-<button class="audio-btn" id="audioBtn" onclick="toggleRecording()">🎤</button>
-
-<script>
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-
-function toggleRecording() {
-    const btn = document.getElementById('audioBtn');
-    
-    if (isRecording) {
-        mediaRecorder.stop();
-        isRecording = false;
-        btn.classList.remove('recording');
-        btn.textContent = '🎤';
-        return;
-    }
-    
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
-            
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64Audio = e.target.result.split(',')[1];
-                    
-                    fetch('/transcribe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ audio: base64Audio })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.text) {
-                            const input = document.querySelector('.stChatInput input');
-                            input.value = data.text;
-                            // تشغيل حدث الإدخال
-                            const event = new Event('input', { bubbles: true });
-                            input.dispatchEvent(event);
-                            // محاكاة الضغط على Enter بعد 300ms
-                            setTimeout(() => {
-                                const btn = document.querySelector('.stChatInput button');
-                                if (btn) btn.click();
-                            }, 400);
-                        }
-                    });
-                };
-                reader.readAsDataURL(audioBlob);
-                btn.textContent = '🎤';
-                btn.classList.remove('recording');
-                isRecording = false;
-            };
-            
-            mediaRecorder.start();
-            isRecording = true;
-            btn.classList.add('recording');
-            btn.textContent = '⏹️';
-        })
-        .catch(() => {
-            alert('الرجاء السماح بالوصول إلى المايكروفون');
-        });
-}
-</script>
-""", unsafe_allow_html=True)
-
-# ============================================================
-# 10. معالجة الإدخال مع بحث ويب محدث وصور
+# 9. معالجة الإدخال (نص + صور + بحث ويب + صوت)
 # ============================================================
 if user_input:
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
-    # معالجة الملفات المرفوعة (صور)
+    # معالجة الصور
     uploaded_images = []
     if hasattr(user_input, 'files') and user_input.files:
         for file in user_input.files:
@@ -566,20 +438,24 @@ if user_input:
     user_message = query
     if uploaded_images:
         if query:
-            user_message += f"\n\n📷 صورة: {uploaded_images[0]['name']}"
+            user_message += f"\n📷 صورة: {uploaded_images[0]['name']}"
         else:
             user_message = f"📷 صورة: {uploaded_images[0]['name']}"
     
     if user_message.strip():
-        # إضافة للمحادثة وعرضها
         st.session_state.messages.append({"role": "user", "content": user_message})
         
+        # عرض رسالة المستخدم
         with st.chat_message("user"):
             st.markdown(user_message)
         
-        # عرض الصور
+        # عرض الصور (يمين)
         for img in uploaded_images:
-            st.image(f"data:image/png;base64,{img['data']}", width=250)
+            st.markdown(f"""
+            <div class="chat-image-wrapper">
+                <img src="data:image/png;base64,{img['data']}" class="chat-image" />
+            </div>
+            """, unsafe_allow_html=True)
         
         # مؤشر الكتابة
         with st.chat_message("assistant"):
@@ -593,7 +469,7 @@ if user_input:
             """, unsafe_allow_html=True)
             
             try:
-                # ===== بحث ويب محدث =====
+                # ===== بحث ويب محدث (Google عبر OpenAI) =====
                 search_results = ""
                 try:
                     search_response = client.responses.create(
@@ -610,17 +486,17 @@ if user_input:
                 system_prompt = f"""
                 أنت نبراس، صديق ذكي ومتحدث لبق.
 
-                ### شخصيتك:
+                🎯 شخصيتك:
                 - ودود، بسيط، يتحدث كصديق مقرب.
                 - تستخدم اسم المستخدم إن عرفته: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه"}
                 - لا تستخدم أيقونات (✌️، ✅، ❌) في ردودك أبداً.
-                - تجيب باختصار ووضوح، لا تبالغ في الإطالة.
+                - تجيب باختصار ووضوح.
 
-                ### المعلومات المحدثة من البحث:
+                📌 المعلومات المحدثة من البحث:
                 {search_results if search_results else "لا توجد نتائج بحث محدثة لهذا السؤال."}
 
-                ### تعليمات إضافية:
-                - إذا أرسل المستخدم صورة، صفها أو تحدث عنها بأسلوبك.
+                🔥 تعليمات:
+                - إذا أرسل المستخدم صورة، صفها بأسلوبك.
                 - إذا السؤال خارج معرفتك، قل ذلك بصراحة.
                 """
                 
@@ -686,7 +562,7 @@ if user_input:
                 st.error(f"⚠️ حدث خطأ: {str(e)}")
 
 # ============================================================
-# 11. تذييل
+# 10. تذييل
 # ============================================================
 st.markdown("""
 <div class="footer">
