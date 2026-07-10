@@ -249,7 +249,7 @@ if user_input:
     query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
 files_text = ""
-    if hasattr(user_input, 'files') and user_input.files:
+if hasattr(user_input, 'files') and user_input.files:
         for file in user_input.files:
             files_text += f"\n[ملف مرفوع: {file.name}]"
     
