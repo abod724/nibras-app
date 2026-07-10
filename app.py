@@ -261,7 +261,7 @@ if user_input:
     interests = user_data.eet("interests", [])        if interests:
                 user_info = f"\n📌 اهتمامات المستخدم: {', '.join(interests)}"            
         system_prompt = f"""
-                    أنت نبراس، صديق ذكي تتحدث مع شخص تحبه.
+                    أنت نبراس، صديق ذكي تتحدث مع شخص تحبه
                     
                     **شخصيتك**:
                     - أنت صديق وليس برنامج أو موقع أخبار.
