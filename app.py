@@ -238,95 +238,68 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 user_input = st.chat_input(
-    "الاسم الأول...",
+    "اكتب سؤالك هنا...",
     accept_file=True,
     file_type=["jpg", "jpeg", "png", "pdf", "csv", "txt"],
     accept_audio=True
 )
 
+# -------------------------- معالجة الإدخال --------------------------
 if user_input:
-    query = user_input.text.strip() if hasattr(user_input, 'text') else ""
-    files_text += """
+    query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
+    
+    files_text = ""
     if hasattr(user_input, 'files') and user_input.files:
-    for file in user_input.files:
-    files_text += f"\n[{file.name}]\n"
+        for file in user_input.files:
+            files_text += f"\n[ملف مرفوع: {file.name}]"
+    
     full_query = query + files_text
+    
     if full_query.strip():
-   st.session_state.chat_history.append({"role": "user", "content": full_query})
+        st.session_state.chat_history.append({"role": "user", "content": full_query})
 
-with st.spinner("جاري التحميل..."):
-    try:
-        user_info = ""
-        if st.session_state.user_name and st.session_state.user_name in memory.get("users", {}):
-            user_data = memory["users"][st.session_state.user_name]
-            interests = user_data.get("interests", [])
-            if interests:
-                user_info = f"\nاهتمامات المستخدم: {', '.join(interests)}"
+        with st.spinner("🔍 جاري البحث..."):
+            try:
+                user_info = ""
+                if st.session_state.user_name and st.session_state.user_name in memory["users"]:
+                    user_data = memory["users"][st.session_state.user_name]
+                    interests = user_data.get("interests", [])
+                    if interests:
+                        user_info = f"\n📌 اهتمامات المستخدم: {', '.join(interests)}"
 
-   system_prompt = f"""
-أنت نبراس، صديق ذكي تتحدث مع شخص تريده أن يشعر بالراحة.
+                system_prompt = f"""
+أنت نبراس، صديق ذكي تتحدث مع شخص تحبه.
 
-**شخصيتك:**
-- أنت صديق وليس برنامجاً أو موقع أخبار.
-- اسم المستخدم هو: {st.session_state.user_name if st.session_state.user_name else "غير معروف"}
+🧠 **شخصيتك**:
+- أنت صديق وليس برنامج أو موقع أخبار.
+- اسم المستخدم هو: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه بعد"}
+{user_info}
 
-**أسلوبك:**
+🗣️ **أسلوبك**:
 - تحدث كأنك جالس مع صديق.
 - نادِ المستخدم باسمه.
 - لا تستخدم كلمات رسمية.
-{user_info}
+
+🔥 **قاعدة مهمة**:
+- ابحث في الويب عن إجابة سؤال المستخدم.
+- لا تستخدم معرفتك القديمة (قبل 2025).
+- لخص المعلومة بأسلوبك الخاص.
 """
-    except Exception as e:
-        st.error(f"حدث خطأ: {e}")
-    system_prompt = " **قاعدة 
-                    - ابحث في الويب عن إجابة سؤال المستخدم.
-                    - لا تستخدم معرفتك القديمة (قبل 2025).
-                    - لخص المعلومة بأسلوبك الخاص.
-                    """
-                    
-                    if st.session_state.user_name and st.session_state.user_name in memory.get("users", {}):
-                        answer = ask_all(st.session_state.chat_history)
-                    else:
-                        answer = "مرحباً! سجل اسمك للمتابعة"
-                        
-                except Exception as e:
-                    st.error(f"عذراً يا صديقي، حدث خطأ أثناء المعالجة: {e}")
-        except Exception as e:
-            st.error(f"عذراً يا صديقي، حدث خطأ أثناء المعالجة: {e}")
-st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-user_key = st.session_state.user_name if st.session_state.user_name else "زائر"
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": system_prompt},
+                        *st.session_state.chat_history
+                    ],
+                    tools=[{"type": "web_search"}],
+                    max_output_tokens=600,
+                )
 
-if user_key in memory.get("users", {}):
-    memory["users"][user_key]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    memory["users"][user_key]["conversations"].append({
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "messages": st.session_state.chat_history[-2:]
-    })
-else:
-    memory["users"][user_key] = {
-        "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "conversations": [{
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "messages": st.session_state.chat_history[-2:]
-        }]
-    }
-else:
-    memory["users"][user_key] = {
-        "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "conversations": [{
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "messages": st.session_state.chat_history[-2:]
-        }]
-    }
+                answer = response.output_text
 
-save_memory(memory)
+                st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-st.session_state.all_chats.append({
-    "date": datetime.now().strftime("%Y:%M - %d/%m"),
-    "messages": st.session_state.chat_history.copy(),
-    "user_name": st.session_state.user_name if st.session_state.user_name else "زائر"
-})
                 if st.session_state.user_name and st.session_state.user_name in memory["users"]:
                     memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M")
                     memory["users"][st.session_state.user_name]["conversations"].append({
