@@ -50,7 +50,7 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# -------------------------- الشريط العلوي (نظيف) --------------------------
+# -------------------------- الشريط العلوي --------------------------
 st.markdown("""
 <style>
 * {
@@ -64,7 +64,6 @@ st.markdown("""
 }
 #MainMenu, footer, header {visibility: hidden;}
 
-/* شريط علوي نظيف */
 .top-bar {
     position: fixed;
     top: 0;
@@ -139,7 +138,6 @@ st.markdown("""
     margin-right: auto;
     border-bottom-left-radius: 4px;
 }
-/* تنسيق المرفقات */
 .uploaded-file {
     background: #f0f4ff;
     border-radius: 12px;
@@ -178,17 +176,15 @@ div[data-testid="stPopover"] button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------- الشريط العلوي (نظيف) --------------------------
+# -------------------------- الشريط العلوي --------------------------
 st.markdown('<div class="top-bar">', unsafe_allow_html=True)
 
-# يسار: أيقونة المحادثات
 st.markdown("""
 <div class="top-left">
     <button id="chat-btn" style="font-size: 20px;">💬</button>
 </div>
 """, unsafe_allow_html=True)
 
-# يمين: أيقونة الشرطتين (القائمة المنسدلة)
 with st.container():
     col_right, _ = st.columns([0.1, 0.9])
     with col_right:
@@ -237,7 +233,7 @@ if st.session_state.user_name is None:
             st.session_state.chat_history.append({"role": "assistant", "content": f"أهلاً بك {st.session_state.user_name}! أنا سعيد بلقائك 🤍"})
             st.rerun()
 
-# -------------------------- مربع الكتابة (مع اسم نبراس) --------------------------
+# -------------------------- مربع الكتابة --------------------------
 st.markdown("""
 <div style="max-width: 850px; margin: 0 auto 10px; padding: 0 20px;">
     <div style="text-align: center; font-size: 13px; color: #9ca3af;">
@@ -264,13 +260,11 @@ if user_input:
             file_extension = file.name.split('.')[-1].lower()
             files_text += f"\n[📎 ملف مرفوع: {file.name}]"
             
-            # محاولة قراءة محتوى الملفات النصية
             try:
                 if file_extension in ['txt', 'csv']:
                     content = file.read().decode('utf-8')
                     uploaded_files_data.append(f"📄 {file.name}:\n{content[:500]}" + ("..." if len(content) > 500 else ""))
                 elif file_extension in ['jpg', 'jpeg', 'png']:
-                    # عرض الصورة في المحادثة (سيتم عرضها أسفل)
                     uploaded_files_data.append(f"🖼️ {file.name} (صورة)")
                 else:
                     uploaded_files_data.append(f"📄 {file.name} (تم رفعه)")
@@ -282,7 +276,6 @@ if user_input:
     if full_query.strip():
         st.session_state.chat_history.append({"role": "user", "content": full_query})
         
-        # عرض المرفقات في المحادثة
         if uploaded_files_data:
             for file_data in uploaded_files_data:
                 st.session_state.chat_history.append({"role": "user", "content": file_data})
@@ -299,17 +292,17 @@ if user_input:
                 system_prompt = f"""
 أنت نبراس، صديق ذكي تتحدث مع شخص تحبه.
 
-🧠 **شخصيتك**:
+🧠 شخصيتك:
 - أنت صديق وليس برنامج أو موقع أخبار.
 - اسم المستخدم هو: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه بعد"}
 {user_info}
 
-🗣️ **أسلوبك**:
+🗣️ أسلوبك:
 - تحدث كأنك جالس مع صديق.
 - نادِ المستخدم باسمه.
 - لا تستخدم كلمات رسمية.
 
-🔥 **قاعدة مهمة**:
+🔥 قاعدة مهمة:
 - ابحث في الويب عن إجابة سؤال المستخدم.
 - لا تستخدم معرفتك القديمة (قبل 2025).
 - لخص المعلومة بأسلوبك الخاص.
@@ -343,7 +336,6 @@ if user_input:
                     "user_name": st.session_state.user_name
                 })
 
-                # تشغيل الصوت
                 try:
                     speech = client.audio.speech.create(
                         model="tts-1",
