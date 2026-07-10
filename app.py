@@ -252,27 +252,33 @@ if user_input:
     files_text += f"\n[{file.name}]\n"
     full_query = query + files_text
     if full_query.strip():
-    st.session_state.chat_history.append({"role": "user", "content": full_query})
-    with st.spinner("الاصغار..."):
+   st.session_state.chat_history.append({"role": "user", "content": full_query})
+
+with st.spinner("جاري التحميل..."):
     try:
-    user_info = """
-    Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab
-    """
-    interests = user_data.eet("interests", [])        if interests:
-                user_info = f"\n📌 اهتمامات المستخدم: {', '.join(interests)}"            
+        user_info = ""
+        if st.session_state.user_name and st.session_state.user_name in memory.get("users", {}):
+            user_data = memory["users"][st.session_state.user_name]
+            interests = user_data.get("interests", [])
+            if interests:
+                user_info = f"\nاهتمامات المستخدم: {', '.join(interests)}"
+
         system_prompt = f"""
-                    أنت نبراس، صديق ذكي تتحدث مع شخص تحبه
-                    
-                    **شخصيتك**:
-                    - أنت صديق وليس برنامج أو موقع أخبار.
-                    - اسم المستخدم هو: {st.session_state.user_name if 'user_name' in st.session_state else 'يا صديقي'}
-                    {user_info}
-                    
-                    **أسلوبك**:
-                    - تحدث كأنك جالس مع صديق.
-                    - نادِ المستخدم باسمه.
-                    - لا تستخدم كلمات رسمية.
-                    
+أنت نبراس، صديق ذكي تتحدث مع شخص تريده أن يشعر بالراحة.
+
+**شخصيتك:**
+- أنت صديق وليس برنامجاً أو موقع أخبار.
+- اسم المستخدم هو: {st.session_state.user_name if st.session_state.user_name else "غير معروف"}
+
+**أسلوبك:**
+- تحدث كأنك جالس مع صديق.
+- نادِ المستخدم باسمه.
+- لا تستخدم كلمات رسمية.
+{user_info}
+"""
+    except Exception as e:
+        st.error(f"حدث خطأ: {e}")
+        system_prompt = "أنت نبراس، صديق ذكي."   
                     **قاعدة مهمة**:
                     - ابحث في الويب عن إجابة سؤال المستخدم.
                     - لا تستخدم معرفتك القديمة (قبل 2025).
