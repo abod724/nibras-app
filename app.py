@@ -16,7 +16,77 @@ if "messages" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ===== الشريط الجانبي =====
+# ============================================================
+# 1. مترجم لغة عين (يظهر في الشريط الجانبي)
+# ============================================================
+def عين_مترجم():
+    st.subheader("🧠 مترجم لغة عين")
+    st.caption("اكتب كوداً بلغة عربية (عين) وسيترجم إلى بايثون وينفذ.")
+    st.components.v1.html("""
+    <html>
+    <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+      <style>
+        body { font-family: sans-serif; direction: rtl; background: transparent; padding: 10px; }
+        textarea { width: 100%; height: 100px; font-family: monospace; }
+        #الناتج { background: #fff; padding: 10px; margin-top: 10px; border: 1px solid #ccc; white-space: pre; }
+        button { padding: 8px 16px; margin-top: 8px; margin-left: 5px; }
+      </style>
+    </head>
+    <body>
+    <textarea id="كود_عين">متغير العدد = 5
+إذا (العدد > 3) {
+  اطبع "العدد أكبر من 3"
+} آخر {
+  اطبع "العدد صغير"
+}</textarea><br>
+    <button onclick="شغل()">▶️ ترجمة وتشغيل</button>
+    <button onclick="احفظ()">💾 حفظ الكود</button>
+    <div id="الناتج"></div>
+    <script>
+    let جاهز = loadPyodide();
+
+    async function شغل() {
+      const كود = document.getElementById("كود_عين").value;
+      let بايثون = كود;
+      بايثون = بايثون.replace(/متغير\s+(\w+)\s*=\s*(.+)/g, "$1 = $2");
+      بايثون = بايثون.replace(/اطبع\s+\"(.+?)\"/g, 'print("$1")');
+      بايثون = بايثون.replace(/إذا\s*\((.+?)\)\s*\{/g, "if ($1):");
+      بايثون = بايثون.replace(/\}\s*آخر\s*\{/g, "else:");
+      بايثون = بايثون.replace(/\u0643\u0631\u0631 من (\d+) إلى (\d+)\s*\{/g, "for i in range($1, $2+1):");
+      بايثون = بايثون.replace(/\}/g, "");
+      let أسطر = بايثون.split("\n");
+      let مسافة = "";
+      let نتيجة = "";
+      for (let سطر of أسطر) {
+        سطر = سطر.trim();
+        if (سطر.endsWith(":")) { نتيجة += مسافة + سطر + "\n"; مسافة += "    "; }
+        else { نتيجة += مسافة + سطر + "\n"; }
+      }
+      const بايثون_جاهز = await جاهز;
+      try {
+        await بايثون_جاهز.runPythonAsync(`\n${نتيجة}`);
+        document.getElementById("الناتج").innerText = "✅ تم التنفيذ بنجاح";
+      } catch (خطأ) {
+        document.getElementById("الناتج").innerText = "❌ خطأ: " + خطأ;
+      }
+    }
+    function احفظ() {
+      const كود = document.getElementById("كود_عين").value;
+      const ملف = new Blob([كود], { type: "text/plain" });
+      const رابط = document.createElement("a");
+      رابط.href = URL.createObjectURL(ملف);
+      رابط.download = "الكود.ain";
+      رابط.click();
+    }
+    </script>
+    </body>
+    </html>
+    """, height=400, scrolling=True)
+
+# ============================================================
+# 2. الشريط الجانبي
+# ============================================================
 with st.sidebar:
     st.markdown("### 💬 نبراس")
     if st.button("➕ محادثة جديدة", use_container_width=True):
@@ -30,9 +100,14 @@ with st.sidebar:
                 st.session_state.messages = chat
                 st.rerun()
     else:
-        st.info("لا توجد محادثات سابقة")
+        st.info("لا توجد محادثات")
+    st.markdown("---")
+    with st.expander("🧠 مترجم لغة عين", expanded=False):
+        عين_مترجم()
 
-# ===== CSS =====
+# ============================================================
+# 3. الواجهة الرئيسية
+# ============================================================
 st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
@@ -41,23 +116,28 @@ st.markdown("""
 .msg-user { padding: 10px 16px; margin: 4px 0 8px auto; background: #e9ecef; border-radius: 18px; max-width: 80%; width: fit-content; }
 .msg-bot { padding: 10px 16px; margin: 4px auto 8px 0; background: #ffffff; border-radius: 18px; max-width: 80%; width: fit-content; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
 .stChatInput { border-radius: 30px !important; border: 1px solid #e5e5e5 !important; background: #ffffff !important; padding: 2px 12px !important; position: fixed !important; bottom: 20px !important; left: 50% !important; transform: translateX(-50%) !important; width: 750px !important; max-width: 92% !important; z-index: 999 !important; }
-.stChatInput input { border-radius: 30px !important; padding: 12px 16px !important; font-size: 15px !important; }
-.stChatInput button { background: #1a1a1a !important; border-radius: 50% !important; padding: 4px 12px !important; color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ===== عرض المحادثة =====
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f'<div class="msg-user">{msg["content"]}</div>', unsafe_allow_html=True)
-    elif msg["role"] == "assistant":
+    else:
         st.markdown(f'<div class="msg-bot">{msg["content"]}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===== الأيقونة + مربع الإدخال =====
-st.markdown('<div style="text-align:center; margin-bottom:4px;"><span style="font-size:28px;">👦</span></div>', unsafe_allow_html=True)
+# ============================================================
+# 4. أيقونة ولد (زر يعمل) فوق مربع الكتابة
+# ============================================================
+col1, col2, col3 = st.columns([1, 10, 1])
+with col1:
+    if st.button("👦", key="boy_icon", help="اضغط هنا"):
+        st.info("🌟 مرحباً! أنا نبراس، كيف يمكنني مساعدتك؟")
 
+# ============================================================
+# 5. مربع الإدخال
+# ============================================================
 prompt = st.chat_input("اكتب سؤالك هنا...", key="main_chat")
 
 if prompt:
