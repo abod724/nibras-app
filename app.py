@@ -1,15 +1,44 @@
 import streamlit as st
+from openai import OpenAI
+import os
 import time
+import random
+import base64
 
-st.set_page_config(page_title="نبراس", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="نبراس", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
+
+API_KEY = st.secrets.get("OPENAI_API_KEY")
+if not API_KEY:
+    st.error("🔴 مفتاح OpenAI غير مضاف")
+    st.stop()
+client = OpenAI(api_key=API_KEY)
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+def get_time():
+    return time.strftime("%I:%M %p")
 
 st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
 .stApp { background: #f5f7fa; }
 .chat-container { max-width: 750px; margin: 80px auto 100px; padding: 0 20px; }
-.msg-user { padding: 12px 18px; margin: 6px 0 6px auto; background: #e9ecef; border-radius: 20px 20px 4px 20px; max-width: 75%; width: fit-content; }
-.msg-bot { padding: 12px 18px; margin: 6px auto 6px 0; background: #ffffff; border-radius: 20px 20px 20px 4px; max-width: 75%; width: fit-content; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.msg-user {
+    padding: 12px 18px; margin: 6px 0 6px auto; background: #e9ecef;
+    border-radius: 20px 20px 4px 20px; max-width: 75%; width: fit-content;
+    animation: slideInRight 0.3s ease;
+}
+.msg-bot {
+    padding: 12px 18px; margin: 6px auto 6px 0; background: #ffffff;
+    border-radius: 20px 20px 20px 4px; max-width: 75%; width: fit-content;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    animation: slideInLeft 0.3s ease;
+}
+@keyframes slideInRight { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeft { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:translateX(0); } }
 .time-badge { font-size: 10px; color: #aaa; margin-top: 4px; display: block; }
 .top-bar {
     position: fixed; top: 0; left: 0; right: 0;
@@ -20,6 +49,20 @@ st.markdown("""
 }
 .top-bar .brand { font-size: 18px; font-weight: 600; color: #1a1a1a; }
 .top-bar .brand span { background: #1a1a1a; color: white; border-radius: 50%; padding: 4px 10px; margin-left: 8px; font-size: 14px; }
+.top-bar .new-chat-btn {
+    background: #1a1a1a; color: white; border: none;
+    padding: 8px 20px; border-radius: 30px; font-size: 14px;
+    cursor: pointer; transition: 0.2s; font-weight: 500;
+}
+.top-bar .new-chat-btn:hover { background: #333; transform: scale(1.02); }
+.category-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 10px 0 20px 0; }
+.category-btn {
+    background: white; border: 1px solid #e5e5e5; padding: 10px 24px;
+    border-radius: 40px; font-size: 14px; cursor: pointer; transition: 0.3s;
+    color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex: 1;
+    min-width: 120px; text-align: center; font-weight: 500;
+}
+.category-btn:hover { background: #1a1a1a; color: white; border-color: #1a1a1a; transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 .stChatInput {
     border-radius: 40px !important; border: 1px solid rgba(0,0,0,0.04) !important;
     background: rgba(255,255,255,0.9) !important; backdrop-filter: blur(10px) !important;
@@ -33,77 +76,86 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===== الشريط العلوي =====
 st.markdown("""
 <div class="top-bar">
     <div class="brand"><span>⚡</span> نبراس</div>
-    <button onclick="location.reload()" style="background:#1a1a1a;color:white;border:none;padding:8px 20px;border-radius:30px;font-size:14px;cursor:pointer;">➕ دردشة جديدة</button>
+    <button class="new-chat-btn" onclick="location.reload()">➕ دردشة جديدة</button>
 </div>
 """, unsafe_allow_html=True)
-
-# ===== عرض المحادثة =====
-if "messages" not in st.session_state:
-    st.session_state.messages = []
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 for msg in st.session_state.messages:
     if msg["role"] == "user":
-        st.markdown(f'<div class="msg-user">{msg["content"]}<span class="time-badge">{time.strftime("%I:%M %p")}</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-user">{msg["content"]}<span class="time-badge">{get_time()}</span></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="msg-bot">{msg["content"]}<span class="time-badge">{time.strftime("%I:%M %p")}</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-bot">{msg["content"]}<span class="time-badge">{get_time()}</span></div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===== القائمة المنسدلة (مثل ChatGPT) =====
-options = [
-    "📝 تلخيص نص", "💡 فكرة مشروع", "📚 شرح درس", "🧠 حل مسألة رياضية",
-    "✍️ كتابة مقال", "🌍 ترجمة نص", "🔍 بحث عن موضوع", "📊 تحليل بيانات",
-    "🎨 تصميم فكرة", "📖 تعريف مصطلح", "🗺️ خطة دراسة", "💼 سيرة ذاتية",
-    "📧 كتابة بريد", "🎤 خطاب", "📝 مراجعة نص", "🧩 لغز أو سؤال",
-    "📈 توقع مستقبلي", "🛠️ حل مشكلة تقنية", "🎯 نصائح يومية", "📋 قائمة مهام"
+# ===== أزرار الفئات السريعة (تغير شخصية نبراس) =====
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("🤖 إبداع", key="cat_ai", use_container_width=True):
+        st.session_state.messages.append({"role": "user", "content": "أريد فكرة إبداعية"})
+        st.rerun()
+with col2:
+    if st.button("📚 تعلم", key="cat_learn", use_container_width=True):
+        st.session_state.messages.append({"role": "user", "content": "أريد شرح درس"})
+        st.rerun()
+with col3:
+    if st.button("💼 محترف", key="cat_pro", use_container_width=True):
+        st.session_state.messages.append({"role": "user", "content": "أريد رداً احترافياً"})
+        st.rerun()
+
+# ===== القائمة المنسدلة الذكية (تستدعي الذكاء الاصطناعي فوراً) =====
+quick_options = [
+    "📝 تلخيص نص", "💡 فكرة مشروع", "📚 شرح درس", "🧠 حل مسألة",
+    "✍️ كتابة مقال", "🌍 ترجمة", "🔍 بحث", "📊 تحليل",
+    "🎨 تصميم", "📖 تعريف", "🗺️ خطة", "💼 سيرة ذاتية",
+    "📧 بريد إلكتروني", "🎤 خطاب", "📝 مراجعة", "🧩 لغز",
+    "📈 توقع", "🛠️ حل مشكلة", "🎯 نصائح", "📋 مهام"
 ]
 
-selected = st.selectbox(
-    "اختر خدمة سريعة:",
-    options,
-    index=None,
-    placeholder="📌 اختر من القائمة...",
-    key="quick_action"
-)
+selected = st.selectbox("⚡ اختر خدمة سريعة:", quick_options, index=None, placeholder="📌 اختر من القائمة...")
 
 if selected:
-    # ردود فورية (بدون انتظار)
-    quick_responses = {
-        "📝 تلخيص نص": "أرسل النص الذي تريد تلخيصه وسأقوم بتلخيصه فوراً.",
-        "💡 فكرة مشروع": "فكرة مشروع: تطبيق لإدارة الوقت باستخدام الذكاء الاصطناعي.",
-        "📚 شرح درس": "أخبرني بالدرس الذي تريد شرحه وسأشرحه لك بأسلوب مبسط.",
-        "🧠 حل مسألة رياضية": "اكتب المسألة الرياضية وسأحلها لك خطوة بخطوة.",
-        "✍️ كتابة مقال": "أخبرني عن موضوع المقال وسأكتبه لك.",
-        "🌍 ترجمة نص": "أرسل النص وسأترجمه لأي لغة تريد.",
-        "🔍 بحث عن موضوع": "اكتب الموضوع وسأقدم لك ملخصاً عنه.",
-        "📊 تحليل بيانات": "أرفق البيانات وسأقوم بتحليلها.",
-        "🎨 تصميم فكرة": "أخبرني عن فكرتك وسأطورها.",
-        "📖 تعريف مصطلح": "اكتب المصطلح وسأعرفه لك.",
-        "🗺️ خطة دراسة": "أخبرني عن المادة وسأضع لك خطة دراسة.",
-        "💼 سيرة ذاتية": "أرسل معلوماتك وسأكتب سيرتك الذاتية.",
-        "📧 كتابة بريد": "أخبرني بمحتوى البريد وسأكتبه لك.",
-        "🎤 خطاب": "أخبرني عن المناسبة وسأكتب لك خطاباً.",
-        "📝 مراجعة نص": "أرسل النص وسأقوم بمراجعته.",
-        "🧩 لغز أو سؤال": "إليك لغز: ما هو الشيء الذي يكتب ولا يقرأ؟ الجواب: القلم.",
-        "📈 توقع مستقبلي": "التوقعات تشير إلى ازدياد استخدام الذكاء الاصطناعي في التعليم.",
-        "🛠️ حل مشكلة تقنية": "أخبرني عن المشكلة وسأقدم لك الحل.",
-        "🎯 نصائح يومية": "نصيحة اليوم: خصص 10 دقائق للقراءة يومياً.",
-        "📋 قائمة مهام": "إليك قائمة مهام يومية: 1) قراءة، 2) تمرين، 3) عمل."
-    }
-
-    reply = quick_responses.get(selected, "شكراً لاختيارك! كيف يمكنني مساعدتك أكثر؟")
     st.session_state.messages.append({"role": "user", "content": selected})
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.rerun()
+    with st.spinner("نبراس يفكر..."):
+        try:
+            # تحديد شخصية نبراس حسب الاختيار
+            system_prompt = "أنت نبراس، مساعد ذكي ومبدع."
+            if "إبداع" in selected or "فكرة" in selected or "تصميم" in selected:
+                system_prompt = "أنت نبراس، خبير إبداعي، تقدم أفكاراً مبتكرة."
+            elif "شرح" in selected or "تعريف" in selected or "درس" in selected:
+                system_prompt = "أنت نبراس، معلم خبير، تشرح الدروس بأسلوب مبسط."
+            elif "احتراف" in selected or "سيرة" in selected or "بريد" in selected:
+                system_prompt = "أنت نبراس، مستشار محترف، تقدم ردوداً مهنية."
 
-# ===== مربع الكتابة الرئيسي =====
+            response = client.responses.create(
+                model="gpt-4o-mini",
+                input=[{"role": "system", "content": system_prompt}] + st.session_state.messages,
+                tools=[{"type": "web_search"}],
+                max_output_tokens=500
+            )
+            reply = response.output_text
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.rerun()
+        except Exception as e:
+            st.error(f"⚠️ خطأ: {str(e)}")
+
 prompt = st.chat_input("اكتب سؤالك هنا...", key="main_chat")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
-    # رد وهمي سريع (لأننا لا نريد انتظار GPT في الوقت الحالي)
-    st.session_state.messages.append({"role": "assistant", "content": f"شكراً لسؤالك: '{prompt}'. سأقوم بالرد عليك قريباً."})
-    st.rerun()
+    with st.chat_message("assistant"):
+        with st.spinner("نبراس يفكر..."):
+            try:
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=st.session_state.messages,
+                    tools=[{"type": "web_search"}],
+                    max_output_tokens=500
+                )
+                reply = response.output_text
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.rerun()
+            except Exception as e:
+                st.error(f"⚠️ {str(e)}")
