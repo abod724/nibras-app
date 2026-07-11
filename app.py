@@ -14,8 +14,10 @@ if not API_KEY:
 client = OpenAI(api_key=API_KEY)
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": "أنت نبراس، صديق ذكي ومبدع."},
-                                 {"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني إلهامك اليوم؟"}]
+    st.session_state.messages = [
+        {"role": "system", "content": "أنت نبراس، صديق ذكي ومبدع."},
+        {"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني إلهامك اليوم؟"}
+    ]
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "bg_color" not in st.session_state:
@@ -29,15 +31,26 @@ def get_time():
     return time.strftime("%I:%M %p")
 
 def random_quote():
-    quotes = ["💡 الإبداع هو الذكاء الذي يمرح.", "🚀 المستقبل لمن يؤمن بجمال أحلامه.",
-              "🌟 كن أنت التغيير.", "🎯 النجاح ليس نهائياً.", "🧠 العقل العظيم يطرح الأسئلة."]
+    quotes = [
+        "💡 الإبداع هو الذكاء الذي يمرح.",
+        "🚀 المستقبل لمن يؤمن بجمال أحلامه.",
+        "🌟 كن أنت التغيير.",
+        "🎯 النجاح ليس نهائياً.",
+        "🧠 العقل العظيم يطرح الأسئلة."
+    ]
     return random.choice(quotes)
 
 def analyze_sentiment(text):
     pos = sum(1 for w in text.split() if w in ["حلو", "جميل", "رائع", "ممتاز", "سعيد", "أحب"])
     neg = sum(1 for w in text.split() if w in ["سيء", "حزين", "مزعج", "كره"])
-    return "😊 إيجابي" if pos > neg else "😞 سلبي" if neg > pos else "😐 محايد"
-    def عين_مترجم():
+    if pos > neg:
+        return "😊 إيجابي"
+    elif neg > pos:
+        return "😞 سلبي"
+    else:
+        return "😐 محايد"
+
+def عين_مترجم():
     st.markdown("### 🧠 مترجم لغة عين")
     st.components.v1.html("""
     <html>
@@ -68,15 +81,30 @@ def analyze_sentiment(text):
                .replace(/\u0643\u0631\u0631 من (\d+) إلى (\d+)\s*\{/g,"for i in range($1, $2+1):")
                .replace(/\}/g,"");
       let أس = ب.split("\n"), م="", ن="";
-      for (let س of أس) { س=س.trim(); if (س.endsWith(":")) { ن+=م+س+"\n"; م+="    "; } else ن+=م+س+"\n"; }
+      for (let س of أس) {
+        س = س.trim();
+        if (س.endsWith(":")) {
+          ن += م + س + "\n";
+          م += "    ";
+        } else {
+          ن += م + س + "\n";
+        }
+      }
       const ج = await جاهز;
-      try { await ج.runPythonAsync(`\n${ن}`); document.getElementById("الناتج").innerText="✅ تم التنفيذ"; }
-      catch (خ) { document.getElementById("الناتج").innerText="❌ "+خ; }
+      try {
+        await ج.runPythonAsync(`\n${ن}`);
+        document.getElementById("الناتج").innerText = "✅ تم التنفيذ";
+      } catch (خ) {
+        document.getElementById("الناتج").innerText = "❌ " + خ;
+      }
     }
     function احفظ() {
       const ك = document.getElementById("كود_عين").value;
       const ف = new Blob([ك], {type:"text/plain"});
-      const ر = document.createElement("a"); ر.href=URL.createObjectURL(ف); ر.download="الكود.ain"; ر.click();
+      const ر = document.createElement("a");
+      ر.href = URL.createObjectURL(ف);
+      ر.download = "الكود.ain";
+      ر.click();
     }
     </script>
     </body>
@@ -86,8 +114,10 @@ def analyze_sentiment(text):
 with st.sidebar:
     st.markdown("### ✨ نبراس")
     if st.button("➕ محادثة جديدة", use_container_width=True):
-        st.session_state.messages = [{"role": "system", "content": "أنت نبراس، صديق ذكي ومبدع."},
-                                     {"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني إلهامك اليوم؟"}]
+        st.session_state.messages = [
+            {"role": "system", "content": "أنت نبراس، صديق ذكي ومبدع."},
+            {"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني إلهامك اليوم؟"}
+        ]
         st.rerun()
     st.markdown("### 📋 المحادثات السابقة")
     if st.session_state.chat_history:
@@ -102,8 +132,11 @@ with st.sidebar:
     if st.button("🎲 اقتباس تحفيزي", use_container_width=True):
         st.info(random_quote())
     if st.button("📊 تحليل المشاعر", use_container_width=True):
-        last = next((m["content"] for m in reversed(st.session_state.messages) if m["role"]=="user"), "")
-        st.info(f"المشاعر: {analyze_sentiment(last)}" if last else "لا توجد رسائل")
+        last = next((m["content"] for m in reversed(st.session_state.messages) if m["role"] == "user"), "")
+        if last:
+            st.info(f"المشاعر: {analyze_sentiment(last)}")
+        else:
+            st.warning("لا توجد رسائل")
     st.markdown("### ⚙️ التخصيص")
     st.session_state.bg_color = st.selectbox("لون الخلفية", ["#ffffff", "#f5f0eb", "#f0f4f8"])
     st.session_state.sound_enabled = st.checkbox("🔊 تفعيل الصوت", value=st.session_state.sound_enabled)
@@ -196,7 +229,8 @@ if st.session_state.pending_prompt:
                         speech = client.audio.speech.create(model="tts-1", voice="alloy", input=reply[:300], response_format="mp3")
                         audio_b64 = base64.b64encode(speech.content).decode()
                         st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
-                    except: pass
+                    except:
+                        pass
                 st.rerun()
             except Exception as e:
                 st.error(f"⚠️ خطأ: {str(e)}")
@@ -221,7 +255,8 @@ if prompt:
                         speech = client.audio.speech.create(model="tts-1", voice="alloy", input=reply[:300], response_format="mp3")
                         audio_b64 = base64.b64encode(speech.content).decode()
                         st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
-                    except: pass
+                    except:
+                        pass
                 st.rerun()
             except Exception as e:
                 st.error(f"⚠️ خطأ: {str(e)}")
