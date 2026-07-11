@@ -2,19 +2,17 @@ import streamlit as st
 from openai import OpenAI
 import os
 import time
+import random
 import base64
 
-# ===== إعدادات الصفحة =====
-st.set_page_config(page_title="نبراس X", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="نبراس X", page_icon="✨", layout="wide", initial_sidebar_state="expanded")
 
-# ===== المفتاح =====
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
     st.error("🔴 مفتاح OpenAI غير مضاف")
     st.stop()
 client = OpenAI(api_key=API_KEY)
 
-# ===== الذاكرة =====
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_history" not in st.session_state:
@@ -22,9 +20,13 @@ if "chat_history" not in st.session_state:
 if "sound_enabled" not in st.session_state:
     st.session_state.sound_enabled = True
 
-# ===== دوال مساعدة =====
 def get_time():
     return time.strftime("%I:%M %p")
+
+def random_quote():
+    quotes = ["💡 الإبداع هو الذكاء الذي يمرح.", "🚀 المستقبل لمن يؤمن بجمال أحلامه.", 
+              "🌟 كن أنت التغيير.", "🎯 النجاح ليس نهائياً.", "🧠 العقل العظيم يطرح الأسئلة."]
+    return random.choice(quotes)
 
 # ===== مترجم لغة عين =====
 def عين_مترجم():
@@ -80,14 +82,14 @@ def عين_مترجم():
     </html>
     """, height=380, scrolling=True)
 
-# ===== الشريط الجانبي =====
+# ===== الشريط الجانبي الإبداعي =====
 with st.sidebar:
-    st.markdown("### ⚡ نبراس X")
+    st.markdown("### ✨ نبراس X")
     if st.button("➕ محادثة جديدة", use_container_width=True):
         st.session_state.messages = []
         st.session_state.chat_history.append(st.session_state.messages.copy())
         st.rerun()
-    st.markdown("### 📋 المحادثات السابقة")
+    st.markdown("### 📋 المحادثات")
     if st.session_state.chat_history:
         for i, chat in enumerate(st.session_state.chat_history[::-1]):
             if st.button(f"💬 محادثة {i+1}", key=f"side_{i}"):
@@ -96,43 +98,83 @@ with st.sidebar:
     else:
         st.info("لا توجد محادثات")
     st.markdown("---")
+    st.markdown("### 🎨 إبداعات")
+    if st.button("🎲 اقتباس", use_container_width=True):
+        st.info(random_quote())
+    if st.button("📊 تحليل المشاعر", use_container_width=True):
+        last = next((m["content"] for m in reversed(st.session_state.messages) if m["role"] == "user"), "")
+        if last:
+            st.info("😊 إيجابي" if "حلو" in last or "جميل" in last else "😐 محايد")
+        else:
+            st.warning("لا توجد رسائل")
+    st.markdown("---")
     st.session_state.sound_enabled = st.checkbox("🔊 الصوت", value=st.session_state.sound_enabled)
     with st.expander("🧠 مترجم لغة عين", expanded=False):
         عين_مترجم()
 
-# ===== الشريط العلوي (بدون اسم نبراس) =====
+# ===== CSS الإبداعي =====
 st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
-.stApp { background: #ffffff; }
+.stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
 .chat-container { max-width: 800px; margin: 20px auto; padding: 0 20px; }
 .msg-user {
-    padding: 10px 16px; margin: 6px 0 6px auto; background: #e9ecef;
-    border-radius: 18px 18px 4px 18px; max-width: 75%; width: fit-content;
+    padding: 12px 18px; margin: 6px 0 6px auto; background: #ffffff;
+    border-radius: 20px 20px 4px 20px; max-width: 75%; width: fit-content;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    animation: slideInRight 0.3s ease;
 }
 .msg-bot {
-    padding: 10px 16px; margin: 6px auto 6px 0; background: #f8f9fa;
-    border-radius: 18px 18px 18px 4px; max-width: 75%; width: fit-content;
-    border: 1px solid #e5e5e5;
+    padding: 12px 18px; margin: 6px auto 6px 0; background: #ffffff;
+    border-radius: 20px 20px 20px 4px; max-width: 75%; width: fit-content;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    animation: slideInLeft 0.3s ease;
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 .time-badge { font-size: 10px; color: #aaa; margin-top: 4px; display: block; }
 .stChatInput {
-    border-radius: 30px !important; border: 1px solid #e5e5e5 !important;
-    background: #ffffff !important; padding: 4px 16px !important;
+    border-radius: 40px !important; border: 1px solid rgba(0,0,0,0.04) !important;
+    background: rgba(255,255,255,0.9) !important; backdrop-filter: blur(10px) !important;
+    padding: 4px 16px !important;
     position: fixed !important; bottom: 20px !important; left: 50% !important;
     transform: translateX(-50%) !important;
     width: 760px !important; max-width: 94% !important; z-index: 999 !important;
 }
-.stChatInput input { border-radius: 30px !important; padding: 12px 16px !important; font-size: 15px !important; }
+.stChatInput input { border-radius: 40px !important; padding: 12px 16px !important; font-size: 15px !important; }
 .stChatInput button { background: #1a1a1a !important; border-radius: 50% !important; padding: 6px 14px !important; color: white !important; }
-.suggestion-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 6px 0 16px 0; }
+.suggestion-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 8px 0 16px 0; }
 .suggestion-chip {
-    background: white; border: 1px solid #e5e5e5; border-radius: 30px;
-    padding: 4px 14px; font-size: 13px; cursor: pointer; transition: 0.2s;
-    color: #1a1a1a;
+    background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+    border: 1px solid rgba(0,0,0,0.04); border-radius: 30px;
+    padding: 6px 16px; font-size: 13px; cursor: pointer; transition: 0.3s;
+    color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.suggestion-chip:hover { background: #f0f0f0; transform: translateY(-2px); }
+.suggestion-chip:hover { background: #ffffff; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+.top-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+    padding: 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.04);
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 1000; height: 56px;
+}
+.top-bar .brand { font-weight: 600; font-size: 18px; }
+.top-bar .brand span { background: #1a1a1a; color: white; border-radius: 50%; padding: 4px 10px; margin-left: 8px; }
 </style>
+""", unsafe_allow_html=True)
+
+# ===== الشريط العلوي =====
+st.markdown("""
+<div class="top-bar">
+    <div class="brand"><span>⚡</span> نبراس X</div>
+    <div></div>
+</div>
 """, unsafe_allow_html=True)
 
 # ===== عرض المحادثة =====
@@ -156,7 +198,7 @@ for i, col in enumerate(cols):
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ===== مربع الكتابة =====
-prompt = st.chat_input("اكتب سؤالك هنا...", key="main_chat")
+prompt = st.chat_input("اكتب سؤالك الإبداعي هنا...", key="main_chat")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("assistant"):
