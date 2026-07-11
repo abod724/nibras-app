@@ -287,7 +287,7 @@ for msg in st.session_state.messages:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================
-# 🟢 أيقونة "ولد" فوق مربع الكتابة
+# 🟢 أيقونة تفاعلية (زر) فوق مربع الكتابة 👦
 # ============================================================
 st.markdown("""
 <div style="
@@ -298,15 +298,16 @@ st.markdown("""
     position: relative;
     z-index: 999;
 ">
-    <span style="
-        font-size: 32px;
+    <div style="
+        display: inline-block;
         background: #ffffff;
         padding: 6px 18px;
         border-radius: 50px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         border: 1px solid #e5e5e5;
-        display: inline-block;
-    ">👦</span>
+    ">
+        👦
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
