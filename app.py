@@ -7,7 +7,17 @@ import json
 import os
 
 # ============================================================
-# 1. المفتاح والعميل
+# 1. إعدادات الصفحة
+# ============================================================
+st.set_page_config(
+    page_title="نبراس",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ============================================================
+# 2. المفتاح والعميل
 # ============================================================
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
@@ -16,7 +26,7 @@ if not API_KEY:
 client = OpenAI(api_key=API_KEY)
 
 # ============================================================
-# 2. الذاكرة الدائمة
+# 3. الذاكرة الدائمة
 # ============================================================
 MEMORY_FILE = "memory.json"
 
@@ -42,16 +52,55 @@ if "sessions" not in st.session_state:
 memory = load_memory()
 
 # ============================================================
-# 3. CSS (بدون ملف خارجي)
+# 4. CSS - واجهة احترافية مثل ChatGPT
 # ============================================================
 st.markdown("""
 <style>
-    /* إخفاء عناصر Streamlit */
     #MainMenu, footer, header { visibility: hidden; }
     .stApp { background: #f7f7f8; }
 
-    /* شريط جانبي */
-    .css-1d391kg { background: #ffffff; }
+    /* شريط علوي */
+    .top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(12px);
+        padding: 6px 24px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        height: 48px;
+    }
+    .top-bar .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #1a1a1a;
+    }
+    .top-bar .brand .icon {
+        background: #1a1a1a;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    /* منطقة المحادثة */
+    .chat-container {
+        max-width: 750px;
+        margin: 65px auto 80px;
+        padding: 0 20px;
+    }
 
     /* رسائل */
     .msg-user {
@@ -82,141 +131,116 @@ st.markdown("""
         clear: both;
     }
 
-    /* مربع الإدخال */
-    .stChatInput {
-        border-radius: 30px !important;
-        border: 1px solid #e5e5e5 !important;
-        background: #ffffff !important;
-        padding: 2px 12px !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02) !important;
-        position: fixed !important;
-        bottom: 20px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 750px !important;
-        max-width: 92% !important;
-        z-index: 999 !important;
+    .chat-image {
+        max-width: 250px;
+        border-radius: 12px;
+        margin: 6px 0;
+        border: 1px solid #e5e5e5;
     }
-    .stChatInput input {
-        border-radius: 30px !important;
-        padding: 12px 16px !important;
+
+    /* مربع الإدخال - مع زر الصوت */
+    .input-container {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 750px;
+        max-width: 92%;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        border-radius: 30px;
+        border: 1px solid #e5e5e5;
+        padding: 4px 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .input-container .stChatInput {
+        flex: 1;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        position: static !important;
+        width: 100% !important;
+        transform: none !important;
+    }
+    .input-container .stChatInput input {
+        border: none !important;
+        padding: 10px 16px !important;
         font-size: 15px !important;
         background: transparent !important;
     }
-    .stChatInput button {
-        background: #1a1a1a !important;
-        border-radius: 50% !important;
-        padding: 4px 12px !important;
-        color: white !important;
-        border: none !important;
+    .input-container .stChatInput button {
+        display: none !important;
+    }
+    .input-container .mic-btn {
+        background: transparent;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #444;
+        padding: 6px 10px;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+    .input-container .mic-btn:hover {
+        background: #f0f0f0;
+    }
+    .input-container .mic-btn.recording {
+        color: #e74c3c;
+        animation: pulse-ring 1.5s infinite;
+    }
+    @keyframes pulse-ring {
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
+    }
+    .input-container .send-btn {
+        background: #1a1a1a;
+        border: none;
+        border-radius: 50%;
+        padding: 6px 12px;
+        color: white;
+        cursor: pointer;
+        font-size: 18px;
+    }
+    .input-container .send-btn:hover {
+        background: #333;
+    }
+
+    /* تذييل */
+    .footer {
+        text-align: center;
+        color: #aaa;
+        font-size: 12px;
+        padding: 16px 0 90px;
+        border-top: 1px solid #f0f0f0;
+        margin-top: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 4. دوال المساعدة
+# 5. الشريط العلوي
 # ============================================================
-def chat_with_nbras(messages, question, uploaded_images=None):
-    messages.append({"role": "user", "content": question})
-    
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(question)
-    
-    if uploaded_images:
-        for img in uploaded_images:
-            st.image(f"data:image/png;base64,{img['data']}", width=250)
-    
-    with st.spinner("نبراس يفكر..."):
-        try:
-            search_results = ""
-            try:
-                search_response = client.responses.create(
-                    model="gpt-4o-mini",
-                    input=[{"role": "user", "content": f"ابحث عن: {question}"}],
-                    tools=[{"type": "web_search"}],
-                    max_output_tokens=300
-                )
-                search_results = search_response.output_text
-            except:
-                pass
-            
-            system_prompt = f"""
-            أنت نبراس، صديق ذكي ودود.
-            - تحدث بأسلوب بسيط، بدون أيقونات.
-            - استخدم اسم المستخدم: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه"}
-            - اعتمد على المعلومات التالية من البحث:
-            {search_results if search_results else "لا توجد نتائج بحث محدثة."}
-            """
-            
-            messages_list = [
-                {"role": "system", "content": system_prompt},
-                *[{"role": m["role"], "content": m["content"]} for m in messages[:-1]]
-            ]
-            
-            if uploaded_images:
-                messages_list.append({
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": question},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{uploaded_images[0]['data']}"}}
-                    ]
-                })
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=messages_list,
-                    max_tokens=600
-                )
-            else:
-                messages_list.append({"role": "user", "content": question})
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=messages_list,
-                    max_tokens=600
-                )
-            
-            answer = response.choices[0].message.content
-            messages.append({"role": "assistant", "content": answer})
-            
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown(answer)
-            
-            st.session_state.sessions.append({
-                "date": datetime.now().strftime("%H:%M - %d/%m"),
-                "messages": messages.copy()
-            })
-            
-            try:
-                speech = client.audio.speech.create(
-                    model="tts-1",
-                    voice="alloy",
-                    input=answer[:300],
-                    response_format="mp3"
-                )
-                audio_b64 = base64.b64encode(speech.content).decode("utf-8")
-                st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
-            except:
-                pass
-            
-        except Exception as e:
-            st.error(f"⚠️ خطأ: {str(e)}")
-
-def clear_session():
-    st.cache_data.clear()
-    st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
-    st.session_state.sessions = []
-    st.success("✅ تم بدء محادثة جديدة")
+st.markdown("""
+<div class="top-bar">
+    <div class="brand">
+        <span class="icon">💬</span> نبراس
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ============================================================
-# 5. الواجهة الرئيسية
+# 6. الشريط الجانبي (أزرار)
 # ============================================================
-st.title('💬 نبراس - صديقك الذكي')
-
 with st.sidebar:
     st.markdown("### 💬 نبراس")
     st.markdown("---")
     
     if st.button("➕ محادثة جديدة", use_container_width=True):
-        clear_session()
+        st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
         st.rerun()
     
     st.markdown("### 📋 المحادثات السابقة")
@@ -247,13 +271,22 @@ with st.sidebar:
         else:
             st.warning("⚠️ لا يوجد رد سابق")
 
-# عرض المحادثة السابقة
-for message in st.session_state.messages:
-    avatar = "👤" if message["role"] == "user" else "🤖"
-    with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message['content'])
+# ============================================================
+# 7. عرض المحادثة
+# ============================================================
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# استخراج اسم المستخدم
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.markdown(f'<div class="msg-user">{msg["content"]}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="msg-bot">{msg["content"]}</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# 8. استخراج الاسم
+# ============================================================
 if st.session_state.user_name is None:
     if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
         last_msg = st.session_state.messages[-1]["content"]
@@ -268,20 +301,116 @@ if st.session_state.user_name is None:
             )
             st.rerun()
 
-# مربع الإدخال
-question = st.chat_input(
-    "اكتب سؤالك... أو ارفع صورة",
-    accept_file=True,
-    file_type=["jpg", "jpeg", "png", "gif", "webp"]
-)
+# ============================================================
+# 9. مربع الإدخال مع زر الصوت
+# ============================================================
+col_input, col_mic, col_send = st.columns([8, 1, 1])
 
-# معالجة الإدخال
-if question:
-    query = question.text.strip() if hasattr(question, 'text') else str(question).strip()
+with col_input:
+    user_input = st.chat_input(
+        "اكتب سؤالك... أو ارفع صورة",
+        accept_file=True,
+        file_type=["jpg", "jpeg", "png", "gif", "webp"]
+    )
+
+with col_mic:
+    # زر الصوت
+    st.markdown("""
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding-top: 6px;">
+        <button id="micButton" class="mic-btn" onclick="toggleRecording()">🎤</button>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_send:
+    st.markdown("""
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding-top: 6px;">
+        <button class="send-btn" onclick="document.querySelector('.stChatInput button').click()">➤</button>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ============================================================
+# 10. كود JavaScript للتسجيل الصوتي
+# ============================================================
+st.components.v1.html("""
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+function toggleRecording() {
+    const btn = document.getElementById('micButton');
+    
+    if (isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        btn.textContent = '🎤';
+        btn.classList.remove('recording');
+        return;
+    }
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Audio = e.target.result.split(',')[1];
+                    // إرسال الصوت إلى الخادم للتحويل إلى نص
+                    fetch('/transcribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: base64Audio })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.text) {
+                            const input = document.querySelector('.stChatInput input');
+                            input.value = data.text;
+                            // محاكاة الضغط على Enter بعد 300ms
+                            setTimeout(() => {
+                                const event = new Event('input', { bubbles: true });
+                                input.dispatchEvent(event);
+                                setTimeout(() => {
+                                    document.querySelector('.stChatInput button').click();
+                                }, 200);
+                            }, 300);
+                        }
+                    });
+                };
+                reader.readAsDataURL(audioBlob);
+                btn.textContent = '🎤';
+                btn.classList.remove('recording');
+                isRecording = false;
+            };
+            
+            mediaRecorder.start();
+            isRecording = true;
+            btn.textContent = '⏹️';
+            btn.classList.add('recording');
+        })
+        .catch(() => {
+            alert('الرجاء السماح بالوصول إلى المايكروفون');
+        });
+}
+</script>
+""", height=0)
+
+# ============================================================
+# 11. معالجة الإدخال (نص + صور + بحث ويب + صوت)
+# ============================================================
+if user_input:
+    query = user_input.text.strip() if hasattr(user_input, 'text') else str(user_input).strip()
     
     uploaded_images = []
-    if hasattr(question, 'files') and question.files:
-        for file in question.files:
+    if hasattr(user_input, 'files') and user_input.files:
+        for file in user_input.files:
             try:
                 img_bytes = file.getvalue()
                 img_b64 = base64.b64encode(img_bytes).decode()
@@ -289,16 +418,120 @@ if question:
             except:
                 pass
     
-    if query or uploaded_images:
-        user_message = query
-        if uploaded_images:
-            if query:
-                user_message += f"\n📷 صورة: {uploaded_images[0]['name']}"
-            else:
-                user_message = f"📷 صورة: {uploaded_images[0]['name']}"
+    user_message = query
+    if uploaded_images:
+        if query:
+            user_message += f"\n📷 صورة: {uploaded_images[0]['name']}"
+        else:
+            user_message = f"📷 صورة: {uploaded_images[0]['name']}"
+    
+    if user_message.strip():
+        st.session_state.messages.append({"role": "user", "content": user_message})
         
-        chat_with_nbras(st.session_state.messages, user_message, uploaded_images)
+        with st.chat_message("user"):
+            st.markdown(user_message)
         
-        if st.session_state.user_name and st.session_state.user_name in memory["users"]:
-            memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().isoformat()
-            save_memory(memory)
+        for img in uploaded_images:
+            st.image(f"data:image/png;base64,{img['data']}", width=250)
+        
+        with st.chat_message("assistant"):
+            with st.spinner("نبراس يفكر..."):
+                try:
+                    search_results = ""
+                    try:
+                        search_response = client.responses.create(
+                            model="gpt-4o-mini",
+                            input=[{"role": "user", "content": f"ابحث عن: {query if query else 'وصف الصورة'}"}],
+                            tools=[{"type": "web_search"}],
+                            max_output_tokens=300
+                        )
+                        search_results = search_response.output_text
+                    except:
+                        pass
+                    
+                    system_prompt = f"""
+                    أنت نبراس، صديق ذكي ودود.
+                    - تحدث بأسلوب بسيط، بدون أيقونات.
+                    - استخدم اسم المستخدم: {st.session_state.user_name if st.session_state.user_name else "لم أعرفه"}
+                    - اعتمد على المعلومات التالية من البحث:
+                    {search_results if search_results else "لا توجد نتائج بحث محدثة."}
+                    """
+                    
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
+                    ]
+                    
+                    if uploaded_images:
+                        messages.append({
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": query or "صف هذه الصورة"},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{uploaded_images[0]['data']}"}}
+                            ]
+                        })
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=messages,
+                            max_tokens=600
+                        )
+                    else:
+                        messages.append({"role": "user", "content": query})
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=messages,
+                            max_tokens=600
+                        )
+                    
+                    answer = response.choices[0].message.content
+                    
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                    st.markdown(f'<div class="msg-bot">{answer}</div>', unsafe_allow_html=True)
+                    
+                    st.session_state.sessions.append({
+                        "date": datetime.now().strftime("%H:%M - %d/%m"),
+                        "messages": st.session_state.messages.copy()
+                    })
+                    
+                    try:
+                        speech = client.audio.speech.create(
+                            model="tts-1",
+                            voice="alloy",
+                            input=answer[:300],
+                            response_format="mp3"
+                        )
+                        audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                        st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+                    except:
+                        pass
+                    
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"⚠️ خطأ: {str(e)}")
+
+# ============================================================
+# 12. معالجة الصوت المسجل (تحويل الصوت إلى نص)
+# ============================================================
+if st.request and st.request.method == "POST" and "/transcribe" in st.request.path:
+    import json
+    data = json.loads(st.request.body)
+    audio_base64 = data.get("audio")
+    if audio_base64:
+        try:
+            import io
+            audio_bytes = base64.b64decode(audio_base64)
+            # استخدم OpenAI Whisper لتحويل الصوت إلى نص
+            from openai import OpenAI
+            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+            # حفظ الصوت مؤقتاً
+            with open("temp_audio.wav", "wb") as f:
+                f.write(audio_bytes)
+            with open("temp_audio.wav", "rb") as f:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=f
+                )
+            st.json({"text": transcript.text})
+        except Exception as e:
+            st.json({"text": f"خطأ: {str(e)}"})
