@@ -34,95 +34,7 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # ============================================================
-# مترجم لغة عين (أداة جانبية)
-# ============================================================
-def عين_مترجم():
-    st.subheader("🧠 مترجم لغة عين")
-    st.caption("اكتب كوداً بلغة عربية (عين) وسيترجم إلى بايثون وينفذ.")
-
-    html_code = """
-    <html>
-    <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
-      <style>
-        body { font-family: sans-serif; direction: rtl; background: transparent; padding: 10px; }
-        textarea { width: 100%; height: 120px; font-family: monospace; }
-        #الناتج { background: #fff; padding: 10px; margin-top: 10px; border: 1px solid #ccc; white-space: pre; }
-        button { padding: 8px 16px; margin-top: 8px; margin-left: 5px; }
-      </style>
-    </head>
-    <body>
-    <textarea id="كود_عين">متغير العدد = 5
-إذا (العدد > 3) {
-  اطبع "العدد أكبر من 3"
-} آخر {
-  اطبع "العدد صغير"
-}</textarea><br>
-    <button onclick="شغل()">▶️ ترجمة وتشغيل</button>
-    <button onclick="احفظ()">💾 حفظ الكود</button>
-    <button onclick="انسخ()">📋 نسخ الناتج</button>
-    <div id="الناتج"></div>
-    <script>
-    let جاهز = loadPyodide();
-
-    async function شغل() {
-      const كود = document.getElementById("كود_عين").value;
-      const بايثون = ترجم(كود);
-      const بايثون_جاهز = await جاهز;
-      try {
-        await بايثون_جاهز.runPythonAsync(`\n${بايثون}`);
-        document.getElementById("الناتج").innerText = "✅ تم التنفيذ بنجاح";
-      } catch (خطأ) {
-        document.getElementById("الناتج").innerText = "❌ خطأ: " + خطأ;
-      }
-    }
-
-    function ترجم(كود) {
-      كود = كود.replace(/متغير\s+(\w+)\s*=\s*(.+)/g, "$1 = $2");
-      كود = كود.replace(/اطبع\s+\"(.+?)\"/g, 'print("$1")');
-      كود = كود.replace(/إذا\s*\((.+?)\)\s*\{/g, "if ($1):");
-      كود = كود.replace(/\}\s*آخر\s*\{/g, "else:");
-      كود = كود.replace(/\u0643\u0631\u0631 من (\d+) إلى (\d+)\s*\{/g, "for i in range($1, $2+1):");
-      كود = كود.replace(/\}/g, "");
-
-      let أسطر = كود.split("\n");
-      let مسافة = "";
-      let نتيجة = "";
-      for (let سطر of أسطر) {
-        سطر = سطر.trim();
-        if (سطر.endsWith(":")) {
-          نتيجة += مسافة + سطر + "\n";
-          مسافة += "    ";
-        } else {
-          نتيجة += مسافة + سطر + "\n";
-        }
-      }
-      return نتيجة;
-    }
-
-    function احفظ() {
-      const كود = document.getElementById("كود_عين").value;
-      const ملف = new Blob([كود], { type: "text/plain" });
-      const رابط = document.createElement("a");
-      رابط.href = URL.createObjectURL(ملف);
-      رابط.download = "الكود.ain";
-      رابط.click();
-    }
-
-    function انسخ() {
-      const نص = document.getElementById("الناتج").innerText;
-      navigator.clipboard.writeText(نص).then(() => {
-        alert("تم نسخ الناتج!");
-      });
-    }
-    </script>
-    </body>
-    </html>
-    """
-    st.components.v1.html(html_code, height=450, scrolling=True)
-
-# ============================================================
-# الشريط الجانبي (الأزرار والمترجم)
+# الشريط الجانبي (الأزرار)
 # ============================================================
 with st.sidebar:
     st.markdown("### 💬 نبراس")
@@ -143,10 +55,6 @@ with st.sidebar:
                 st.rerun()
     else:
         st.info("لا توجد محادثات سابقة")
-    
-    st.markdown("---")
-    with st.expander("🧠 مترجم لغة عين", expanded=False):
-        عين_مترجم()
 
 # ============================================================
 # CSS لتثبيت الشريط العلوي
@@ -248,12 +156,91 @@ st.markdown("""
 col1, col2, col3 = st.columns([1, 6, 1])
 
 with col1:
-    if st.button("⊕", key="new_chat", help="محادثة جديدة"):
-        st.session_state.messages = [
-            {"role": "system", "content": "أنت نبراس، صديق ذكي ودود، تجيب بأسلوب بسيط وواضح."},
-            {"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}
-        ]
-        st.rerun()
+    # زر أيقونة ولد (يفتح المترجم في منسدلة)
+    with st.popover("👦"):
+        st.markdown("### 🧠 مترجم لغة عين")
+        st.caption("اكتب كوداً بلغة عربية (عين) وسيترجم إلى بايثون وينفذ.")
+
+        html_code = """
+        <html>
+        <head>
+          <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+          <style>
+            body { font-family: sans-serif; direction: rtl; background: transparent; padding: 10px; }
+            textarea { width: 100%; height: 120px; font-family: monospace; }
+            #الناتج { background: #fff; padding: 10px; margin-top: 10px; border: 1px solid #ccc; white-space: pre; }
+            button { padding: 8px 16px; margin-top: 8px; margin-left: 5px; }
+          </style>
+        </head>
+        <body>
+        <textarea id="كود_عين">متغير العدد = 5
+إذا (العدد > 3) {
+  اطبع "العدد أكبر من 3"
+} آخر {
+  اطبع "العدد صغير"
+}</textarea><br>
+        <button onclick="شغل()">▶️ ترجمة وتشغيل</button>
+        <button onclick="احفظ()">💾 حفظ الكود</button>
+        <button onclick="انسخ()">📋 نسخ الناتج</button>
+        <div id="الناتج"></div>
+        <script>
+        let جاهز = loadPyodide();
+
+        async function شغل() {
+          const كود = document.getElementById("كود_عين").value;
+          const بايثون = ترجم(كود);
+          const بايثون_جاهز = await جاهز;
+          try {
+            await بايثون_جاهز.runPythonAsync(`\n${بايثون}`);
+            document.getElementById("الناتج").innerText = "✅ تم التنفيذ بنجاح";
+          } catch (خطأ) {
+            document.getElementById("الناتج").innerText = "❌ خطأ: " + خطأ;
+          }
+        }
+
+        function ترجم(كود) {
+          كود = كود.replace(/متغير\s+(\w+)\s*=\s*(.+)/g, "$1 = $2");
+          كود = كود.replace(/اطبع\s+\"(.+?)\"/g, 'print("$1")');
+          كود = كود.replace(/إذا\s*\((.+?)\)\s*\{/g, "if ($1):");
+          كود = كود.replace(/\}\s*آخر\s*\{/g, "else:");
+          كود = كود.replace(/\u0643\u0631\u0631 من (\d+) إلى (\d+)\s*\{/g, "for i in range($1, $2+1):");
+          كود = كود.replace(/\}/g, "");
+
+          let أسطر = كود.split("\n");
+          let مسافة = "";
+          let نتيجة = "";
+          for (let سطر of أسطر) {
+            سطر = سطر.trim();
+            if (سطر.endsWith(":")) {
+              نتيجة += مسافة + سطر + "\n";
+              مسافة += "    ";
+            } else {
+              نتيجة += مسافة + سطر + "\n";
+            }
+          }
+          return نتيجة;
+        }
+
+        function احفظ() {
+          const كود = document.getElementById("كود_عين").value;
+          const ملف = new Blob([كود], { type: "text/plain" });
+          const رابط = document.createElement("a");
+          رابط.href = URL.createObjectURL(ملف);
+          رابط.download = "الكود.ain";
+          رابط.click();
+        }
+
+        function انسخ() {
+          const نص = document.getElementById("الناتج").innerText;
+          navigator.clipboard.writeText(نص).then(() => {
+            alert("تم نسخ الناتج!");
+          });
+        }
+        </script>
+        </body>
+        </html>
+        """
+        st.components.v1.html(html_code, height=450, scrolling=True)
 
 with col3:
     with st.popover("☰"):
@@ -287,7 +274,7 @@ for msg in st.session_state.messages:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================
-# 🟢 أيقونة تفاعلية (زر) فوق مربع الكتابة 👦
+# أيقونة فوق مربع الكتابة
 # ============================================================
 st.markdown("""
 <div style="
