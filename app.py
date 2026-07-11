@@ -174,11 +174,15 @@ st.markdown(f"""
     }}
     .stChatInput input {{ border-radius: 40px !important; padding: 14px 18px !important; font-size: 15px !important; background: transparent !important; }}
     .stChatInput button {{ background: #1a1a1a !important; border-radius: 50% !important; padding: 6px 14px !important; color: white !important; }}
-    .suggestion-chips {{ display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 10px 0 20px 0; }}
+    .suggestion-chips {{
+        display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+        margin: 6px 0 16px 0; padding: 0 10px;
+    }}
     .suggestion-chip {{
         background: white; border: 1px solid #e5e5e5; border-radius: 30px;
-        padding: 6px 16px; font-size: 13px; cursor: pointer; transition: 0.2s;
+        padding: 4px 14px; font-size: 13px; cursor: pointer; transition: 0.2s;
         color: #1a1a1a; box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        white-space: nowrap;
     }}
     .suggestion-chip:hover {{ background: #f0f0f0; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }}
 </style>
