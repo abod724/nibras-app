@@ -5,7 +5,7 @@ import time
 import random
 import base64
 
-st.set_page_config(page_title="نبراس X", page_icon="✨", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="نبراس", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
@@ -24,11 +24,12 @@ def get_time():
     return time.strftime("%I:%M %p")
 
 def random_quote():
-    quotes = ["💡 الإبداع هو الذكاء الذي يمرح.", "🚀 المستقبل لمن يؤمن بجمال أحلامه.", 
-              "🌟 كن أنت التغيير.", "🎯 النجاح ليس نهائياً.", "🧠 العقل العظيم يطرح الأسئلة."]
-    return random.choice(quotes)
+    return random.choice([
+        "💡 الإبداع هو الذكاء الذي يمرح.",
+        "🚀 المستقبل لمن يؤمن بجمال أحلامه.",
+        "🌟 كن أنت التغيير."
+    ])
 
-# ===== مترجم لغة عين =====
 def عين_مترجم():
     st.markdown("### 🧠 مترجم لغة عين")
     st.components.v1.html("""
@@ -82,14 +83,14 @@ def عين_مترجم():
     </html>
     """, height=380, scrolling=True)
 
-# ===== الشريط الجانبي الإبداعي =====
+# ===== الشريط الجانبي =====
 with st.sidebar:
-    st.markdown("### ✨ نبراس X")
-    if st.button("➕ محادثة جديدة", use_container_width=True):
+    st.markdown("### ⚡ نبراس")
+    if st.button("🔄 محادثة جديدة", use_container_width=True):
         st.session_state.messages = []
         st.session_state.chat_history.append(st.session_state.messages.copy())
         st.rerun()
-    st.markdown("### 📋 المحادثات")
+    st.markdown("### 📋 المحادثات السابقة")
     if st.session_state.chat_history:
         for i, chat in enumerate(st.session_state.chat_history[::-1]):
             if st.button(f"💬 محادثة {i+1}", key=f"side_{i}"):
@@ -101,22 +102,16 @@ with st.sidebar:
     st.markdown("### 🎨 إبداعات")
     if st.button("🎲 اقتباس", use_container_width=True):
         st.info(random_quote())
-    if st.button("📊 تحليل المشاعر", use_container_width=True):
-        last = next((m["content"] for m in reversed(st.session_state.messages) if m["role"] == "user"), "")
-        if last:
-            st.info("😊 إيجابي" if "حلو" in last or "جميل" in last else "😐 محايد")
-        else:
-            st.warning("لا توجد رسائل")
     st.markdown("---")
     st.session_state.sound_enabled = st.checkbox("🔊 الصوت", value=st.session_state.sound_enabled)
     with st.expander("🧠 مترجم لغة عين", expanded=False):
         عين_مترجم()
 
-# ===== CSS الإبداعي =====
+# ===== التصميم الإبداعي =====
 st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
-.stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+.stApp { background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%); }
 .chat-container { max-width: 800px; margin: 20px auto; padding: 0 20px; }
 .msg-user {
     padding: 12px 18px; margin: 6px 0 6px auto; background: #ffffff;
@@ -130,14 +125,8 @@ st.markdown("""
     box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     animation: slideInLeft 0.3s ease;
 }
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
-}
+@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
 .time-badge { font-size: 10px; color: #aaa; margin-top: 4px; display: block; }
 .stChatInput {
     border-radius: 40px !important; border: 1px solid rgba(0,0,0,0.04) !important;
@@ -151,7 +140,7 @@ st.markdown("""
 .stChatInput button { background: #1a1a1a !important; border-radius: 50% !important; padding: 6px 14px !important; color: white !important; }
 .suggestion-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 8px 0 16px 0; }
 .suggestion-chip {
-    background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
     border: 1px solid rgba(0,0,0,0.04); border-radius: 30px;
     padding: 6px 16px; font-size: 13px; cursor: pointer; transition: 0.3s;
     color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
@@ -159,20 +148,20 @@ st.markdown("""
 .suggestion-chip:hover { background: #ffffff; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
 .top-bar {
     position: fixed; top: 0; left: 0; right: 0;
-    background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
-    padding: 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.04);
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+    padding: 10px 24px; border-bottom: 1px solid rgba(0,0,0,0.04);
     display: flex; justify-content: space-between; align-items: center;
     z-index: 1000; height: 56px;
 }
-.top-bar .brand { font-weight: 600; font-size: 18px; }
-.top-bar .brand span { background: #1a1a1a; color: white; border-radius: 50%; padding: 4px 10px; margin-left: 8px; }
+.top-bar .brand { font-weight: 600; font-size: 18px; color: #1a1a1a; }
+.top-bar .brand span { background: #1a1a1a; color: white; border-radius: 50%; padding: 4px 10px; margin-left: 8px; font-size: 14px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ===== الشريط العلوي =====
 st.markdown("""
 <div class="top-bar">
-    <div class="brand"><span>⚡</span> نبراس X</div>
+    <div class="brand"><span>⚡</span> نبراس</div>
     <div></div>
 </div>
 """, unsafe_allow_html=True)
@@ -186,7 +175,7 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="msg-bot">{msg["content"]}<span class="time-badge">{get_time()}</span></div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===== الخيارات =====
+# ===== الخيارات (تعمل وتستقبل ردوداً فعلية) =====
 suggestions = ["💡 مشروع جديد", "🚀 أخبار التقنية", "🎨 فكرة إبداعية", "📚 تعلم البرمجة", "🧠 الذكاء الاصطناعي"]
 st.markdown('<div class="suggestion-chips">', unsafe_allow_html=True)
 cols = st.columns(len(suggestions))
