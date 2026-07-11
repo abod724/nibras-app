@@ -1,4 +1,3 @@
-from styling import template2_page_style
 import streamlit as st
 from openai import OpenAI
 import base64
@@ -43,23 +42,92 @@ if "sessions" not in st.session_state:
 memory = load_memory()
 
 # ============================================================
-# 3. دوال المساعدة
+# 3. CSS (بدون ملف خارجي)
+# ============================================================
+st.markdown("""
+<style>
+    /* إخفاء عناصر Streamlit */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stApp { background: #f7f7f8; }
+
+    /* شريط جانبي */
+    .css-1d391kg { background: #ffffff; }
+
+    /* رسائل */
+    .msg-user {
+        padding: 10px 16px;
+        margin: 4px 0 8px auto;
+        background: #e9ecef;
+        border-radius: 18px;
+        border-bottom-right-radius: 4px;
+        max-width: 80%;
+        width: fit-content;
+        color: #1a1a1a;
+        font-size: 15px;
+        line-height: 1.6;
+        clear: both;
+    }
+    .msg-bot {
+        padding: 10px 16px;
+        margin: 4px auto 8px 0;
+        background: #ffffff;
+        border-radius: 18px;
+        border-bottom-left-radius: 4px;
+        max-width: 80%;
+        width: fit-content;
+        color: #1a1a1a;
+        font-size: 15px;
+        line-height: 1.6;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        clear: both;
+    }
+
+    /* مربع الإدخال */
+    .stChatInput {
+        border-radius: 30px !important;
+        border: 1px solid #e5e5e5 !important;
+        background: #ffffff !important;
+        padding: 2px 12px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02) !important;
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 750px !important;
+        max-width: 92% !important;
+        z-index: 999 !important;
+    }
+    .stChatInput input {
+        border-radius: 30px !important;
+        padding: 12px 16px !important;
+        font-size: 15px !important;
+        background: transparent !important;
+    }
+    .stChatInput button {
+        background: #1a1a1a !important;
+        border-radius: 50% !important;
+        padding: 4px 12px !important;
+        color: white !important;
+        border: none !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ============================================================
+# 4. دوال المساعدة
 # ============================================================
 def chat_with_nbras(messages, question, uploaded_images=None):
-    """ترسل السؤال إلى OpenAI وتعرض الرد"""
     messages.append({"role": "user", "content": question})
     
     with st.chat_message("user", avatar="👤"):
         st.markdown(question)
     
-    # عرض الصور المرفوعة
     if uploaded_images:
         for img in uploaded_images:
             st.image(f"data:image/png;base64,{img['data']}", width=250)
     
     with st.spinner("نبراس يفكر..."):
         try:
-            # بحث ويب محدث
             search_results = ""
             try:
                 search_response = client.responses.create(
@@ -112,13 +180,11 @@ def chat_with_nbras(messages, question, uploaded_images=None):
             with st.chat_message("assistant", avatar="🤖"):
                 st.markdown(answer)
             
-            # حفظ الجلسة
             st.session_state.sessions.append({
                 "date": datetime.now().strftime("%H:%M - %d/%m"),
                 "messages": messages.copy()
             })
             
-            # تشغيل الصوت تلقائياً
             try:
                 speech = client.audio.speech.create(
                     model="tts-1",
@@ -135,120 +201,104 @@ def chat_with_nbras(messages, question, uploaded_images=None):
             st.error(f"⚠️ خطأ: {str(e)}")
 
 def clear_session():
-    """يمسح المحادثة ويبدأ جلسة جديدة"""
     st.cache_data.clear()
     st.session_state.messages = [{"role": "assistant", "content": "مرحباً، أنا نبراس. كيف يمكنني مساعدتك؟"}]
     st.session_state.sessions = []
     st.success("✅ تم بدء محادثة جديدة")
 
 # ============================================================
-# 4. الواجهة الرئيسية
+# 5. الواجهة الرئيسية
 # ============================================================
-def main():
-    # تطبيق تنسيق القالب
-    template2_page_style()
-    
-    st.title('نبراس - صديقك الذكي')
-    
-    # الشريط الجانبي
-    with st.sidebar:
-        st.markdown("### 💬 نبراس")
-        st.markdown("---")
-        
-        if st.button("➕ محادثة جديدة", use_container_width=True):
-            clear_session()
-            st.rerun()
-        
-        st.markdown("### 📋 المحادثات السابقة")
-        if st.session_state.sessions:
-            for i, s in enumerate(st.session_state.sessions[::-1]):
-                if st.button(f"💬 {s['date']}", key=f"side_{i}", use_container_width=True):
-                    st.session_state.messages = s["messages"]
-                    st.rerun()
-        else:
-            st.info("لا توجد محادثات سابقة")
-        
-        st.markdown("---")
-        st.markdown("### 🎤 الصوت")
-        if st.button("🔊 تشغيل آخر رد", use_container_width=True):
-            if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
-                last_reply = st.session_state.messages[-1]["content"]
-                try:
-                    speech = client.audio.speech.create(
-                        model="tts-1",
-                        voice="alloy",
-                        input=last_reply[:300],
-                        response_format="mp3"
-                    )
-                    audio_b64 = base64.b64encode(speech.content).decode("utf-8")
-                    st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
-                except:
-                    st.warning("⚠️ تعذر تشغيل الصوت")
-            else:
-                st.warning("⚠️ لا يوجد رد سابق")
-    
-    # عرض المحادثة السابقة
-    avatars = {
-        "assistant": "🤖",
-        "user": "👤"
-    }
-    
-    for message in st.session_state.messages:
-        avatar = avatars.get(message["role"], "❓")
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message['content'])
-    
-    # استخراج اسم المستخدم
-    if st.session_state.user_name is None:
-        if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-            last_msg = st.session_state.messages[-1]["content"]
-            match = re.search(r"اسمي\s+(\w+)", last_msg)
-            if match:
-                st.session_state.user_name = match.group(1)
-                if st.session_state.user_name not in memory["users"]:
-                    memory["users"][st.session_state.user_name] = {"first_seen": datetime.now().isoformat()}
-                    save_memory(memory)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": f"أهلاً {st.session_state.user_name}! سعيد برؤيتك 🤍"}
-                )
-                st.rerun()
-    
-    # مربع الإدخال
-    question = st.chat_input(
-        "اكتب سؤالك... أو ارفع صورة",
-        accept_file=True,
-        file_type=["jpg", "jpeg", "png", "gif", "webp"]
-    )
-    
-    # معالجة الإدخال
-    if question:
-        query = question.text.strip() if hasattr(question, 'text') else str(question).strip()
-        
-        # معالجة الصور المرفوعة
-        uploaded_images = []
-        if hasattr(question, 'files') and question.files:
-            for file in question.files:
-                try:
-                    img_bytes = file.getvalue()
-                    img_b64 = base64.b64encode(img_bytes).decode()
-                    uploaded_images.append({"name": file.name, "data": img_b64})
-                except:
-                    pass
-        
-        if query or uploaded_images:
-            user_message = query
-            if uploaded_images:
-                if query:
-                    user_message += f"\n📷 صورة: {uploaded_images[0]['name']}"
-                else:
-                    user_message = f"📷 صورة: {uploaded_images[0]['name']}"
-            
-            chat_with_nbras(st.session_state.messages, user_message, uploaded_images)
-            
-            # حفظ في الذاكرة الدائمة
-            if st.session_state.user_name and st.session_state.user_name in memory["users"]:
-                memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().isoformat()
-                save_memory(memory)
+st.title('💬 نبراس - صديقك الذكي')
 
-if __name__ == "__main__":
-    main()
+with st.sidebar:
+    st.markdown("### 💬 نبراس")
+    st.markdown("---")
+    
+    if st.button("➕ محادثة جديدة", use_container_width=True):
+        clear_session()
+        st.rerun()
+    
+    st.markdown("### 📋 المحادثات السابقة")
+    if st.session_state.sessions:
+        for i, s in enumerate(st.session_state.sessions[::-1]):
+            if st.button(f"💬 {s['date']}", key=f"side_{i}", use_container_width=True):
+                st.session_state.messages = s["messages"]
+                st.rerun()
+    else:
+        st.info("لا توجد محادثات سابقة")
+    
+    st.markdown("---")
+    st.markdown("### 🎤 الصوت")
+    if st.button("🔊 تشغيل آخر رد", use_container_width=True):
+        if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+            last_reply = st.session_state.messages[-1]["content"]
+            try:
+                speech = client.audio.speech.create(
+                    model="tts-1",
+                    voice="alloy",
+                    input=last_reply[:300],
+                    response_format="mp3"
+                )
+                audio_b64 = base64.b64encode(speech.content).decode("utf-8")
+                st.audio(f"data:audio/mp3;base64,{audio_b64}", format="audio/mp3")
+            except:
+                st.warning("⚠️ تعذر تشغيل الصوت")
+        else:
+            st.warning("⚠️ لا يوجد رد سابق")
+
+# عرض المحادثة السابقة
+for message in st.session_state.messages:
+    avatar = "👤" if message["role"] == "user" else "🤖"
+    with st.chat_message(message["role"], avatar=avatar):
+        st.markdown(message['content'])
+
+# استخراج اسم المستخدم
+if st.session_state.user_name is None:
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+        last_msg = st.session_state.messages[-1]["content"]
+        match = re.search(r"اسمي\s+(\w+)", last_msg)
+        if match:
+            st.session_state.user_name = match.group(1)
+            if st.session_state.user_name not in memory["users"]:
+                memory["users"][st.session_state.user_name] = {"first_seen": datetime.now().isoformat()}
+                save_memory(memory)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": f"أهلاً {st.session_state.user_name}! سعيد برؤيتك 🤍"}
+            )
+            st.rerun()
+
+# مربع الإدخال
+question = st.chat_input(
+    "اكتب سؤالك... أو ارفع صورة",
+    accept_file=True,
+    file_type=["jpg", "jpeg", "png", "gif", "webp"]
+)
+
+# معالجة الإدخال
+if question:
+    query = question.text.strip() if hasattr(question, 'text') else str(question).strip()
+    
+    uploaded_images = []
+    if hasattr(question, 'files') and question.files:
+        for file in question.files:
+            try:
+                img_bytes = file.getvalue()
+                img_b64 = base64.b64encode(img_bytes).decode()
+                uploaded_images.append({"name": file.name, "data": img_b64})
+            except:
+                pass
+    
+    if query or uploaded_images:
+        user_message = query
+        if uploaded_images:
+            if query:
+                user_message += f"\n📷 صورة: {uploaded_images[0]['name']}"
+            else:
+                user_message = f"📷 صورة: {uploaded_images[0]['name']}"
+        
+        chat_with_nbras(st.session_state.messages, user_message, uploaded_images)
+        
+        if st.session_state.user_name and st.session_state.user_name in memory["users"]:
+            memory["users"][st.session_state.user_name]["last_seen"] = datetime.now().isoformat()
+            save_memory(memory)
