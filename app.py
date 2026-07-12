@@ -7,9 +7,6 @@ from openai import OpenAI
 from googlesearch import search as google_search
 import base64
 
-# ═══════════════════════════════════════════
-# 1) إعدادات الصفحة
-# ═══════════════════════════════════════════
 st.set_page_config(
     page_title="نبراس - المساعد الذكي",
     page_icon="🤖",
@@ -17,134 +14,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ═══════════════════════════════════════════
-# 2) استدعاء المفتاح من صندوق الأسرار
-# ═══════════════════════════════════════════
 API_KEY = st.secrets.get("OPENAI_API_KEY")
-
 if not API_KEY:
     st.error("🔴 مفتاح OpenAI غير موجود! أضفه في ملف .streamlit/secrets.toml")
     st.stop()
 
-# ═══════════════════════════════════════════
-# 3) التنسيقات (CSS أبيض نظيف)
-# ═══════════════════════════════════════════
+# ─── CSS ───
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
-
 * { font-family: 'IBM Plex Sans Arabic', sans-serif; }
-
-.stApp {
-    background: #ffffff;
-    color: #0d0d0d;
-}
-
+.stApp { background: #ffffff; color: #0d0d0d; }
 #MainMenu, footer, header { visibility: hidden; }
-
-section[data-testid="stSidebar"] {
-    background: #f9f9f9;
-    border-left: 1px solid #e5e5e5;
-}
-section[data-testid="stSidebar"] .stMarkdown h1,
-section[data-testid="stSidebar"] .stMarkdown h2,
-section[data-testid="stSidebar"] .stMarkdown h3 {
-    color: #0d0d0d;
-    font-size: 0.95rem;
-}
-
-[data-testid="stChatMessage"] {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 8px 0;
-    max-width: 760px;
-    margin: 0 auto;
-}
-
-[data-testid="stChatMessageContent"] {
-    color: #0d0d0d;
-    font-size: 16px;
-    line-height: 1.75;
-}
-
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    background: #f7f7f8;
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin: 6px auto;
-}
-
-[data-testid="stChatInput"] {
-    max-width: 760px;
-    margin: 0 auto;
-    border-radius: 28px;
-    border: 1px solid #e5e5e5;
-    background: #ffffff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-}
-[data-testid="stChatInput"]:focus-within {
-    border-color: #0d0d0d;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-}
-
-.stButton > button {
-    border-radius: 10px;
-    border: 1px solid #e5e5e5;
-    background: #ffffff;
-    color: #0d0d0d;
-    font-weight: 500;
-    transition: all 0.15s;
-}
-.stButton > button:hover {
-    background: #f7f7f8;
-    border-color: #d0d0d0;
-}
-
-.source-link {
-    display: inline-block;
-    background: #f7f7f8;
-    color: #2563eb;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-    padding: 3px 12px;
-    margin: 3px 2px;
-    font-size: 0.82rem;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-.source-link:hover {
-    background: #eff6ff;
-    border-color: #2563eb;
-}
-
-.brand {
-    text-align: center;
-    padding: 1rem 0 0.5rem;
-}
-.brand h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #0d0d0d;
-    margin: 0;
-}
-.brand p {
-    color: #8e8e8e;
-    font-size: 0.88rem;
-    margin-top: 0.2rem;
-}
-
-.divider {
-    border: none;
-    border-top: 1px solid #f0f0f0;
-    margin: 0.5rem 0;
-}
+section[data-testid="stSidebar"] { background: #f9f9f9; border-left: 1px solid #e5e5e5; }
+[data-testid="stChatMessage"] { background: transparent; border: none; border-radius: 0; padding: 8px 0; max-width: 760px; margin: 0 auto; }
+[data-testid="stChatMessageContent"] { color: #0d0d0d; font-size: 16px; line-height: 1.75; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) { background: #f7f7f8; border-radius: 12px; padding: 14px 18px; margin: 6px auto; }
+[data-testid="stChatInput"] { max-width: 760px; margin: 0 auto; border-radius: 28px; border: 1px solid #e5e5e5; background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+[data-testid="stChatInput"]:focus-within { border-color: #0d0d0d; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+.stButton > button { border-radius: 10px; border: 1px solid #e5e5e5; background: #ffffff; color: #0d0d0d; font-weight: 500; transition: all 0.15s; }
+.stButton > button:hover { background: #f7f7f8; border-color: #d0d0d0; }
+.source-link { display: inline-block; background: #f7f7f8; color: #2563eb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 3px 12px; margin: 3px 2px; font-size: 0.82rem; text-decoration: none; transition: all 0.15s; }
+.source-link:hover { background: #eff6ff; border-color: #2563eb; }
+.brand { text-align: center; padding: 1rem 0 0.5rem; }
+.brand h1 { font-size: 1.6rem; font-weight: 700; color: #0d0d0d; margin: 0; }
+.brand p { color: #8e8e8e; font-size: 0.88rem; margin-top: 0.2rem; }
+.divider { border: none; border-top: 1px solid #f0f0f0; margin: 0.5rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
-# 4) الشريط الجانبي - الإعدادات + القائمة
-# ═══════════════════════════════════════════
+# ─── الشريط الجانبي ───
 with st.sidebar:
     if st.button("➕  محادثة جديدة", use_container_width=True, type="primary"):
         st.session_state.messages = []
@@ -173,11 +72,8 @@ with st.sidebar:
 
     st.caption(f"💬 الرسائل: {len(st.session_state.get('messages', []))}")
 
-# ═══════════════════════════════════════════
-# 5) دوال مساعدة
-# ═══════════════════════════════════════════
+# ─── دوال مساعدة ───
 def search_google(query, max_results=5):
-    """بحث قوقل مباشر"""
     try:
         results = list(google_search(query, num_results=max_results, advanced=True))
         if not results:
@@ -194,12 +90,9 @@ def search_google(query, max_results=5):
         return None, []
 
 def image_to_base64(uploaded_file):
-    """تحويل الصورة المرفوعة إلى base64"""
     return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
 
-# ═══════════════════════════════════════════
-# 6) الشعار
-# ═══════════════════════════════════════════
+# ─── الشعار ───
 st.markdown("""
 <div class="brand">
     <h1>🤖 نبراس</h1>
@@ -207,9 +100,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
-# 7) تهيئة المحادثة
-# ═══════════════════════════════════════════
+# ─── تهيئة المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "sources" not in st.session_state:
@@ -217,9 +108,7 @@ if "sources" not in st.session_state:
 if "pending_prompt" not in st.session_state:
     st.session_state.pending_prompt = ""
 
-# ═══════════════════════════════════════════
-# 8) عرض الرسائل السابقة
-# ═══════════════════════════════════════════
+# ─── عرض الرسائل السابقة ───
 for idx, msg in enumerate(st.session_state.messages):
     avatar = "🧑" if msg["role"] == "user" else "🤖"
     with st.chat_message(msg["role"], avatar=avatar):
@@ -231,9 +120,7 @@ for idx, msg in enumerate(st.session_state.messages):
             )
             st.markdown(f"**📎 المصادر:**<br>{links}", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
-# 9) شاشة ترحيب + أزرار سريعة
-# ═══════════════════════════════════════════
+# ─── شاشة ترحيب ───
 if not st.session_state.messages:
     with st.chat_message("assistant", avatar="🤖"):
         st.markdown("أهلاً 👋 كيف أقدر أساعدك؟")
@@ -245,20 +132,17 @@ if not st.session_state.messages:
             if st.button(s, key=f"s{i}", use_container_width=True):
                 st.session_state.pending_prompt = s
 
-# ═══════════════════════════════════════════
-# 10) رفع صورة + إدخال صوتي + نص
-# ═══════════════════════════════════════════
+# ─── رفع صورة ───
 uploaded_image = st.file_uploader("📷 رفع صورة", type=["png", "jpg", "jpeg"], key="img")
 
+# ─── الإدخال ───
 prompt = st.chat_input("اكتب رسالتك هنا...")
 
 if st.session_state.pending_prompt:
     prompt = st.session_state.pending_prompt
     st.session_state.pending_prompt = ""
 
-# ═══════════════════════════════════════════
-# 11) معالجة الرد
-# ═══════════════════════════════════════════
+# ─── معالجة الرد ───
 if prompt or uploaded_image:
 
     if not API_KEY:
@@ -267,9 +151,8 @@ if prompt or uploaded_image:
 
     user_text = prompt or "اشرح هذه الصورة"
 
+    # عرض رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": user_text})
-    with st.chat_message("user", avatar="🧑"):
-        st.markdown(user_text)
 
     with st.chat_message("assistant", avatar="🤖"):
         try:
@@ -308,6 +191,8 @@ if prompt or uploaded_image:
                 stream=True,
                 max_tokens=4096
             )
+
+            # استخدام st.write_stream بدلاً من التجميع اليدوي
             response = st.write_stream(stream)
 
             st.session_state.messages.append({"role": "assistant", "content": response})
@@ -331,3 +216,6 @@ if prompt or uploaded_image:
                 st.error("⏳ تجاوزت الحد، انتظر دقيقة")
             else:
                 st.error(f"❌ {e}")
+
+    # ─── إعادة التحديث مرة واحدة فقط ───
+    st.rerun()
