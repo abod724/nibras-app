@@ -5,7 +5,7 @@ st.set_page_config(
     page_title="نبراس",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"  # ← تغيير إلى expanded
 )
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -13,7 +13,7 @@ if not API_KEY:
     st.error("🔴 مفتاح OpenAI غير موجود")
     st.stop()
 
-# ─── تصميم نظيف وأبيض ───
+# ─── تصميم نظيف مع إظهار أيقونة المنسدلة ───
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
@@ -27,7 +27,13 @@ st.markdown("""
 
 #MainMenu, footer, header { visibility: hidden; }
 
-/* الشعار */
+/* أيقونة فتح القائمة (هامبرغر) */
+.st-emotion-cache-1v0mbdj {
+    display: block !important;
+    color: #1a1a1a !important;
+    font-size: 24px !important;
+}
+
 .title-container {
     text-align: center;
     padding: 1.5rem 0 0.5rem;
@@ -44,7 +50,6 @@ st.markdown("""
     margin-top: 0.2rem;
 }
 
-/* الرسائل */
 .stChatMessage {
     border-radius: 16px;
     margin-bottom: 6px;
@@ -66,7 +71,6 @@ st.markdown("""
     background: transparent;
 }
 
-/* مربع الإدخال */
 [data-testid="stChatInput"] {
     border-radius: 30px !important;
     border: 1px solid #e0e0e0 !important;
@@ -85,11 +89,12 @@ st.markdown("""
 /* الشريط الجانبي */
 section[data-testid="stSidebar"] {
     background: #f9f9f9;
+    border-right: 1px solid #e5e5e5;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── الشعار الرئيسي (نظيف) ───
+# ─── الشعار الرئيسي ───
 st.markdown("""
 <div class="title-container">
     <h1>🤖 نبراس</h1>
@@ -97,7 +102,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─── الشريط الجانبي (القائمة المنسدلة) ───
+# ─── الشريط الجانبي (المنسدلة) ───
 with st.sidebar:
     st.markdown("### ⚙️ الإعدادات")
     
@@ -116,8 +121,6 @@ with st.sidebar:
         st.rerun()
     
     st.divider()
-    
-    # ─── التوقيع داخل القائمة (خفيف) ───
     st.caption("تم بناءه بواسطة أبو مشعل")
 
 # ─── المحادثة ───
