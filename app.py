@@ -49,10 +49,6 @@ st.markdown("""
     color: #8899a6;
     font-size: 1.1rem;
 }
-
-.sidebar .stTextInput > div > div > input {
-    direction: ltr;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -77,7 +73,7 @@ with st.sidebar:
     
     system_prompt = st.text_area(
         "📝 شخصية المساعد",
-        value="أنت نبراس، مساعد ذكي احترافي ودود. تجيب باللغة العربية بشكل واضح ومفصل ومنظم. استخدم الإيموجي عند الحاجة.",
+        value="أنت نبراس، مساعد ذكي احترافي ودود. تجيب باللغة العربية بشكل واضح ومفصل ومنظم. استخدم الإيموجي عند الحاجة. ابحث في الويب إذا كان السؤال يحتاج معلومات حديثة.",
         height=120
     )
     
@@ -88,7 +84,7 @@ with st.sidebar:
         st.rerun()
     
     st.divider()
-    st.caption("صنع بـ ❤️ باستخدام Streamlit + OpenAI")
+    # تم إزالة عبارة "صنع بـ ❤️"
 
 # ─── العنوان ───
 st.markdown("""
@@ -128,13 +124,15 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
             messages_for_api = [{"role": "system", "content": system_prompt}]
             messages_for_api.extend(st.session_state.messages)
             
-            # Streaming response
+            # ─── إضافة البحث في الويب ───
             stream = client.chat.completions.create(
                 model=model,
                 messages=messages_for_api,
                 temperature=temperature,
                 stream=True,
-                max_tokens=4096
+                max_tokens=4096,
+                tools=[{"type": "web_search"}],  # ← تفعيل البحث في الويب
+                tool_choice="auto"  # ← يقرر النموذج متى يبحث
             )
             
             response = st.write_stream(stream)
