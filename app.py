@@ -1,135 +1,171 @@
 import streamlit as st
 from openai import OpenAI
-from googlesearch import search as google_search
 
-# ─── إعدادات الصفحة ───
 st.set_page_config(
-    page_title="نبراس - المساعد الذكي",
-    page_icon="🤖",
+    page_title="نبراس",
+    page_icon="🦅",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# ─── استدعاء المفتاح من صندوق الأسرار ───
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
-    st.error("🔴 مفتاح OpenAI غير موجود! أضفه في ملف .streamlit/secrets.toml")
+    st.error("🔴 مفتاح OpenAI غير موجود")
     st.stop()
 
-# ─── التنسيق ───
+# ─── تصميم قوي وجريء ───
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&display=swap');
+
 * { font-family: 'Tajawal', sans-serif; }
-.main { background-color: #0e1117; }
-.stChatMessage { border-radius: 16px; margin-bottom: 8px; }
-[data-testid="stChatMessageContent"] { font-size: 16px; line-height: 1.8; }
-.title-container { text-align: center; padding: 2rem 0 1rem; }
-.title-container h1 {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 2.5rem;
-    font-weight: 700;
+
+.stApp {
+    background: #0a0a0a;
+    color: #ffffff;
 }
-.title-container p { color: #8899a6; font-size: 1.1rem; }
-.sidebar .stTextInput > div > div > input { direction: ltr; }
+
+#MainMenu, footer, header { visibility: hidden; }
+
+.title-container {
+    text-align: center;
+    padding: 2rem 0 0.5rem;
+    border-bottom: 3px solid #d4a017;
+}
+.title-container h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #d4a017;
+    text-shadow: 0 0 20px rgba(212, 160, 23, 0.3);
+    margin: 0;
+}
+.title-container p {
+    color: #aaaaaa;
+    font-size: 1.1rem;
+    margin-top: 0.2rem;
+}
+
+.stChatMessage {
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #2a2a2a;
+}
+
+[data-testid="stChatMessageContent"] {
+    font-size: 17px;
+    line-height: 1.8;
+    color: #f0f0f0;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    background: #1a1a1a;
+    border-color: #d4a017;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+    background: #121212;
+    border-color: #333333;
+}
+
+[data-testid="stChatInput"] {
+    border-radius: 30px !important;
+    border: 2px solid #d4a017 !important;
+    background: #1a1a1a !important;
+}
+[data-testid="stChatInput"] input {
+    color: #ffffff !important;
+    font-size: 16px !important;
+}
+[data-testid="stChatInput"] button {
+    background: #d4a017 !important;
+    color: #0a0a0a !important;
+    font-weight: 700 !important;
+}
+
+.stButton > button {
+    background: #d4a017 !important;
+    color: #0a0a0a !important;
+    font-weight: 700;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 24px;
+    transition: 0.3s;
+}
+.stButton > button:hover {
+    background: #f0c020 !important;
+    transform: scale(1.02);
+}
+
+.sidebar-title {
+    color: #d4a017;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid #d4a017;
+    padding-bottom: 8px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ─── الشريط الجانبي ───
-with st.sidebar:
-    st.header("⚙️ الإعدادات")
-    
-    model = st.selectbox("🧠 النموذج", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], index=0)
-    temperature = st.slider("🌡️ درجة الإبداع", 0.0, 2.0, 0.7, 0.1, help="قيمة أعلى = ردود أكثر إبداعاً")
-    
-    # ─── مفتاح البحث ───
-    web_search = st.toggle("🌐 البحث في الويب", value=True, help="فعّل هذا الخيار للبحث عن معلومات حديثة")
-    search_count = st.slider("📄 عدد النتائج", 3, 10, 5, key="sc", help="عدد نتائج البحث")
-    
-    system_prompt = st.text_area(
-        "📝 شخصية المساعد",
-        value="أنت نبراس، مساعد ذكي احترافي ودود. تجيب باللغة العربية بشكل واضح ومفصل ومنظم. استخدم الإيموجي عند الحاجة.",
-        height=120
-    )
-    
-    st.divider()
-    if st.button("🗑️ مسح المحادثة", use_container_width=True, type="secondary"):
-        st.session_state.messages = []
-        st.rerun()
-    st.caption("صنع بـ ❤️ باستخدام Streamlit + OpenAI")
-
-# ─── العنوان ───
+# ─── الشعار ───
 st.markdown("""
 <div class="title-container">
-    <h1>🤖 نبراس</h1>
-    <p>مدعوم بتقنية ChatGPT - اسألني أي شيء</p>
+    <h1>🦅 نبراس</h1>
+    <p>الذكاء الاصطناعي القوي</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── تهيئة المحادثة ───
+# ─── الشريط الجانبي (القائمة المنسدلة) ───
+with st.sidebar:
+    st.markdown('<p class="sidebar-title">⚙️ الإعدادات</p>', unsafe_allow_html=True)
+    
+    model = st.selectbox("🧠 النموذج", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"], index=0)
+    temperature = st.slider("🌡️ الإبداع", 0.0, 2.0, 0.7, 0.1)
+    
+    system_prompt = st.text_area(
+        "📝 شخصية المساعد",
+        value="أنت نبراس، مساعد ذكي قوي وحازم. تجيب بالعربية بوضوح ودقة، بدون إطالة.",
+        height=100
+    )
+    
+    st.divider()
+    
+    if st.button("🗑️ مسح المحادثة", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+    
+    st.divider()
+    
+    # ─── هنا التعديل: وضع التوقيع داخل القائمة ───
+    st.markdown("""
+    <div style="text-align: center; color: #888888; font-size: 0.8rem; border-top: 1px solid #333333; padding-top: 10px; margin-top: 10px;">
+        تم بناءه وإنشاءه بواسطة <span style="color: #d4a017; font-weight: 700;">أبو مشعل</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ─── المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ─── عرض الرسائل السابقة ───
 for message in st.session_state.messages:
-    with st.chat_message(message["role"], avatar="🧑" if message["role"] == "user" else "🤖"):
+    with st.chat_message(message["role"], avatar="🧑" if message["role"] == "user" else "🦅"):
         st.markdown(message["content"])
 
-# ─── رسالة ترحيب ───
 if not st.session_state.messages:
-    with st.chat_message("assistant", avatar="🤖"):
-        st.markdown("مرحباً! 👋 أنا نبراس، مساعدك الذكي. كيف أقدر أساعدك اليوم؟")
+    with st.chat_message("assistant", avatar="🦅"):
+        st.markdown("مرحباً 👋 أنا نبراس. كيف أقدر أساعدك اليوم؟")
 
-# ─── دالة البحث ───
-def search_google(query, max_results=5):
-    try:
-        results = list(google_search(query, num_results=max_results, advanced=True))
-        if not results:
-            return None
-        context = ""
-        for i, r in enumerate(results, 1):
-            title = getattr(r, "title", "")
-            desc = getattr(r, "description", "")
-            url = getattr(r, "url", "")
-            context += f"[{i}] {title}\n{desc}\nالرابط: {url}\n\n"
-        return context.strip()
-    except Exception as e:
-        st.warning(f"⚠️ تعذر البحث: {e}")
-        return None
-
-# ─── إدخال المستخدم ───
+# ─── الإدخال ───
 if prompt := st.chat_input("اكتب رسالتك هنا..."):
-    
-    # ─── إضافة رسالة المستخدم وعرضها ───
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="🧑"):
         st.markdown(prompt)
     
-    # ─── البحث (إذا كان مفعّلاً) ───
-    search_context = None
-    if web_search:
-        with st.spinner("🌐 جاري البحث..."):
-            search_context = search_google(prompt, search_count)
-    
-    # ─── توليد الرد ───
-    with st.chat_message("assistant", avatar="🤖"):
+    with st.chat_message("assistant", avatar="🦅"):
         try:
             client = OpenAI(api_key=API_KEY)
-            
-            # ─── بناء الرسائل ───
             messages_for_api = [{"role": "system", "content": system_prompt}]
-            
-            if search_context:
-                messages_for_api.append({
-                    "role": "system",
-                    "content": f"📌 نتائج البحث:\n{search_context}\n\nاستخدم هذه المعلومات للإجابة، واذكر المصادر."
-                })
-            
             messages_for_api.extend(st.session_state.messages)
             
-            # ─── التدفق ───
             stream = client.chat.completions.create(
                 model=model,
                 messages=messages_for_api,
@@ -137,7 +173,6 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
                 stream=True,
                 max_tokens=4096
             )
-            
             response = st.write_stream(stream)
             st.session_state.messages.append({"role": "assistant", "content": response})
             
