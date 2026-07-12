@@ -3,7 +3,7 @@ from openai import OpenAI
 
 st.set_page_config(
     page_title="نبراس",
-    page_icon="🦅",
+    page_icon="🤖",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -13,117 +13,99 @@ if not API_KEY:
     st.error("🔴 مفتاح OpenAI غير موجود")
     st.stop()
 
-# ─── تصميم قوي وجريء ───
+# ─── تصميم نظيف وأبيض ───
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
 
 * { font-family: 'Tajawal', sans-serif; }
 
 .stApp {
-    background: #0a0a0a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1a1a1a;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
 
+/* الشعار */
 .title-container {
     text-align: center;
-    padding: 2rem 0 0.5rem;
-    border-bottom: 3px solid #d4a017;
+    padding: 1.5rem 0 0.5rem;
 }
 .title-container h1 {
-    font-size: 3rem;
-    font-weight: 900;
-    color: #d4a017;
-    text-shadow: 0 0 20px rgba(212, 160, 23, 0.3);
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
     margin: 0;
 }
 .title-container p {
-    color: #aaaaaa;
-    font-size: 1.1rem;
+    color: #888888;
+    font-size: 0.95rem;
     margin-top: 0.2rem;
 }
 
+/* الرسائل */
 .stChatMessage {
-    border-radius: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    margin-bottom: 6px;
 }
 
 [data-testid="stChatMessageContent"] {
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.8;
-    color: #f0f0f0;
+    color: #1a1a1a;
 }
 
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    background: #1a1a1a;
-    border-color: #d4a017;
+    background: #f0f0f0;
+    border-radius: 16px;
+    padding: 10px 16px;
 }
 
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-    background: #121212;
-    border-color: #333333;
+    background: transparent;
 }
 
+/* مربع الإدخال */
 [data-testid="stChatInput"] {
     border-radius: 30px !important;
-    border: 2px solid #d4a017 !important;
-    background: #1a1a1a !important;
+    border: 1px solid #e0e0e0 !important;
+    background: #ffffff !important;
 }
 [data-testid="stChatInput"] input {
-    color: #ffffff !important;
-    font-size: 16px !important;
+    color: #1a1a1a !important;
+    font-size: 15px !important;
 }
 [data-testid="stChatInput"] button {
-    background: #d4a017 !important;
-    color: #0a0a0a !important;
-    font-weight: 700 !important;
+    background: #1a1a1a !important;
+    color: white !important;
+    border-radius: 50% !important;
 }
 
-.stButton > button {
-    background: #d4a017 !important;
-    color: #0a0a0a !important;
-    font-weight: 700;
-    border: none;
-    border-radius: 30px;
-    padding: 10px 24px;
-    transition: 0.3s;
-}
-.stButton > button:hover {
-    background: #f0c020 !important;
-    transform: scale(1.02);
-}
-
-.sidebar-title {
-    color: #d4a017;
-    font-size: 1.2rem;
-    font-weight: 700;
-    border-bottom: 2px solid #d4a017;
-    padding-bottom: 8px;
+/* الشريط الجانبي */
+section[data-testid="stSidebar"] {
+    background: #f9f9f9;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── الشعار ───
+# ─── الشعار الرئيسي (نظيف) ───
 st.markdown("""
 <div class="title-container">
-    <h1>🦅 نبراس</h1>
-    <p>الذكاء الاصطناعي القوي</p>
+    <h1>🤖 نبراس</h1>
+    <p>اسألني أي شيء</p>
 </div>
 """, unsafe_allow_html=True)
 
 # ─── الشريط الجانبي (القائمة المنسدلة) ───
 with st.sidebar:
-    st.markdown('<p class="sidebar-title">⚙️ الإعدادات</p>', unsafe_allow_html=True)
+    st.markdown("### ⚙️ الإعدادات")
     
     model = st.selectbox("🧠 النموذج", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"], index=0)
     temperature = st.slider("🌡️ الإبداع", 0.0, 2.0, 0.7, 0.1)
-    
     system_prompt = st.text_area(
         "📝 شخصية المساعد",
-        value="أنت نبراس، مساعد ذكي قوي وحازم. تجيب بالعربية بوضوح ودقة، بدون إطالة.",
+        value="أنت نبراس، مساعد ذكي ودود. تجيب بالعربية بوضوح.",
         height=100
     )
     
@@ -135,23 +117,19 @@ with st.sidebar:
     
     st.divider()
     
-    # ─── هنا التعديل: وضع التوقيع داخل القائمة ───
-    st.markdown("""
-    <div style="text-align: center; color: #888888; font-size: 0.8rem; border-top: 1px solid #333333; padding-top: 10px; margin-top: 10px;">
-        تم بناءه وإنشاءه بواسطة <span style="color: #d4a017; font-weight: 700;">أبو مشعل</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # ─── التوقيع داخل القائمة (خفيف) ───
+    st.caption("تم بناءه بواسطة أبو مشعل")
 
 # ─── المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"], avatar="🧑" if message["role"] == "user" else "🦅"):
+    with st.chat_message(message["role"], avatar="🧑" if message["role"] == "user" else "🤖"):
         st.markdown(message["content"])
 
 if not st.session_state.messages:
-    with st.chat_message("assistant", avatar="🦅"):
+    with st.chat_message("assistant", avatar="🤖"):
         st.markdown("مرحباً 👋 أنا نبراس. كيف أقدر أساعدك اليوم؟")
 
 # ─── الإدخال ───
@@ -160,7 +138,7 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
     with st.chat_message("user", avatar="🧑"):
         st.markdown(prompt)
     
-    with st.chat_message("assistant", avatar="🦅"):
+    with st.chat_message("assistant", avatar="🤖"):
         try:
             client = OpenAI(api_key=API_KEY)
             messages_for_api = [{"role": "system", "content": system_prompt}]
