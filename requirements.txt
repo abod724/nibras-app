@@ -6,3 +6,5 @@ gtts
 streamlit-chat
 google-search-results
 duckduckgo-search
+streamlit
+googlesearch
