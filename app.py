@@ -1,6 +1,6 @@
 """
 🤖 نبراس - المساعد الذكي
-بحث قوقل + صوت + صور + تصميم أبيض نظيف
+بحث قوقل + صور + تصميم أبيض نظيف
 """
 import streamlit as st
 from openai import OpenAI
@@ -45,7 +45,7 @@ section[data-testid="stSidebar"] { background: #f9f9f9; border-left: 1px solid #
 
 # ─── الشريط الجانبي ───
 with st.sidebar:
-    if st.button("➕  محادثة جديدة", use_container_width=True, type="primary"):
+    if st.button("➕ محادثة جديدة", use_container_width=True, type="primary"):
         st.session_state.messages = []
         st.session_state.sources = []
         st.rerun()
@@ -57,7 +57,7 @@ with st.sidebar:
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    with st.expander("☰  القائمة"):
+    with st.expander("☰ القائمة"):
         web_search = st.toggle("🌐 بحث قوقل", value=True)
         search_count = st.slider("عدد النتائج", 3, 10, 5, key="sc")
         system_prompt = st.text_area(
@@ -151,9 +151,14 @@ if prompt or uploaded_image:
 
     user_text = prompt or "اشرح هذه الصورة"
 
-    # عرض رسالة المستخدم
+    # ─── عرض رسالة المستخدم ───
+    with st.chat_message("user", avatar="🧑"):
+        st.markdown(user_text)
+
+    # ─── حفظ رسالة المستخدم ───
     st.session_state.messages.append({"role": "user", "content": user_text})
 
+    # ─── رد المساعد ───
     with st.chat_message("assistant", avatar="🤖"):
         try:
             client = OpenAI(api_key=API_KEY)
@@ -192,7 +197,6 @@ if prompt or uploaded_image:
                 max_tokens=4096
             )
 
-            # استخدام st.write_stream بدلاً من التجميع اليدوي
             response = st.write_stream(stream)
 
             st.session_state.messages.append({"role": "assistant", "content": response})
@@ -216,6 +220,3 @@ if prompt or uploaded_image:
                 st.error("⏳ تجاوزت الحد، انتظر دقيقة")
             else:
                 st.error(f"❌ {e}")
-
-    # ─── إعادة التحديث مرة واحدة فقط ───
-    st.rerun()
