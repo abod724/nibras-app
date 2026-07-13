@@ -2,7 +2,12 @@ import streamlit as st
 from openai import OpenAI
 from datetime import datetime
 
-st.set_page_config(page_title="نبراس 2026", page_icon="🌐", layout="wide")
+st.set_page_config(
+    page_title="نبراس",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
@@ -14,6 +19,7 @@ client = OpenAI(api_key=API_KEY)
 def get_current_date():
     return datetime.now().strftime("%A، %d %B %Y")
 
+# ─── الشريط الجانبي (المنسدلة فقط) ───
 with st.sidebar:
     st.markdown("### ⚙️ الإعدادات")
     if st.button("➕ محادثة جديدة", use_container_width=True):
@@ -25,17 +31,20 @@ with st.sidebar:
     st.divider()
     st.caption(f"📅 التاريخ اليوم: {get_current_date()}")
 
+# ─── بدء المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": "أنت نبراس، مساعد ذكي ومحدث. أجب بحد أقصى 3 جمل."},
         {"role": "assistant", "content": f"مرحباً! أنا نبراس، اليوم هو {get_current_date()}. كيف أساعدك؟"}
     ]
 
+# ─── عرض الرسائل بدون أيقونات ───
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
+# ─── مربع الكتابة ───
 if prompt := st.chat_input("اكتب سؤالك..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -50,15 +59,15 @@ if prompt := st.chat_input("اكتب سؤالك..."):
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ─── 🔥 البحث في الويب عبر OpenAI (يعمل 100%) ───
-            with st.spinner("🌐 جاري البحث..."):
+            # ─── البحث عبر OpenAI (بدون أيقونات) ───
+            with st.spinner("جاري التفكير..."):
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
                         {"role": "system", "content": "أنت نبراس، مساعد ذكي ومحدث. أجب بحد أقصى 3 جمل."},
                         *st.session_state.messages
                     ],
-                    tools=[{"type": "web_search"}],  # ← هذه هي أداة البحث
+                    tools=[{"type": "web_search"}],
                     max_output_tokens=200,
                     temperature=0.3
                 )
