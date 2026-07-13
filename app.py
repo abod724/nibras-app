@@ -2,8 +2,13 @@ import streamlit as st
 from openai import OpenAI
 from datetime import datetime
 import time
+import pytz  # ← إضافة هذه المكتبة لتحديد المنطقة الزمنية
 
-# ─── دالة الكتابة المتقطعة ───
+# ─── دالة التاريخ (تقرأ من جهازك بتوقيتك) ───
+def get_real_date():
+    tz = pytz.timezone('Asia/Riyadh')  # غيّر إلى منطقتك إذا لزم الأمر
+    return datetime.now(tz).strftime("%A، %d %B %Y")
+
 def typewriter(text):
     placeholder = st.empty()
     displayed = ""
@@ -12,15 +17,9 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
-# ─── دالة التاريخ من جهازك ───
-def get_real_date():
-    return datetime.now().astimezone().strftime("%A، %d %B %Y")
-
-# ─── حالة القائمة ───
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
 
-# ─── CSS ───
 st.markdown("""
 <style>
     [data-testid="stChatMessageAvatarUser"],
@@ -53,7 +52,6 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# ─── الأزرار العلوية ───
 top_col1, top_col2, top_col3 = st.columns([0.1, 0.8, 0.1])
 
 with top_col1:
@@ -66,7 +64,6 @@ with top_col3:
         st.session_state.menu_open = False
         st.rerun()
 
-# ─── القائمة المنسدلة ───
 if st.session_state.menu_open:
     menu_box = st.container()
     with menu_box:
@@ -104,7 +101,6 @@ if st.session_state.menu_open:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ─── المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
