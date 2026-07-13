@@ -132,6 +132,13 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
+            # ⭐ رد ثابت: عطني نبذة
+            if ("عطني نبذه" in prompt) or ("عطني نبذة" in prompt) or ("نبذه عنك" in prompt):
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
             # ⭐ إصلاح التاريخ
             if ("اليوم" in prompt) or ("تاريخ" in prompt) or ("عن اليوم" in prompt):
                 reply = f"اليوم هو {get_real_date()}."
