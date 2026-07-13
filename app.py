@@ -11,10 +11,9 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
-def get_current_dates():
+def get_real_date():
     now = datetime.now()
-    gregorian = now.strftime("%A، %d %B %Y")
-    return gregorian
+    return now.strftime("%A، %d %B %Y")
 
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
@@ -118,9 +117,10 @@ if prompt:
 
     with st.chat_message("assistant"):
         try:
+
+            # ⭐ إصلاح مشكلة التاريخ نهائيًا
             if ("اليوم" in prompt) or ("تاريخ" in prompt) or ("عن اليوم" in prompt):
-                gregorian = get_current_dates()
-                reply = f"اليوم هو {gregorian}."
+                reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
             else:
