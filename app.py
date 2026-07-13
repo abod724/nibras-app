@@ -3,7 +3,6 @@ from openai import OpenAI
 from datetime import datetime
 import time
 
-# ─── تأثير الكتابة المتقطعة ───
 def typewriter(text):
     placeholder = st.empty()
     displayed = ""
@@ -12,11 +11,9 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
-# ─── حالة القائمة ───
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
 
-# ─── زر المنسدلة + زر محادثة جديدة ───
 st.markdown("""
 <style>
     [data-testid="stChatMessageAvatarUser"],
@@ -37,67 +34,9 @@ st.markdown("""
         font-size: 15px !important;
         line-height: 1.6 !important;
     }
-
-    /* حركة الانزلاق للقائمة */
-    .menu-box {
-        position: fixed;
-        top: 50px;
-        right: 10px;
-        background: #ffffff;
-        padding: 12px;
-        border-radius: 8px;
-        box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
-        z-index: 9999;
-        width: 160px;
-        font-size: 15px;
-        transform: translateY(-20px);
-        opacity: 0;
-        transition: all 0.3s ease-in-out;
-    }
-    .menu-box.show {
-        transform: translateY(0px);
-        opacity: 1;
-    }
-
-    .menu-btn, .new-chat-btn {
-        padding: 6px 10px;
-        font-size: 20px;
-        background-color: #f0f0f0;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── أزرار Streamlit الحقيقية ───
-col1, col2 = st.columns([0.1, 0.9])
-
-with col1:
-    if st.button("≡"):
-        st.session_state.menu_open = not st.session_state.menu_open
-
-with col2:
-    if st.button("+"):
-        st.session_state.messages = []
-        st.session_state.menu_open = False
-        st.rerun()
-
-# ─── القائمة المنسدلة ───
-menu_class = "menu-box show" if st.session_state.menu_open else "menu-box"
-
-st.markdown(f"""
-<div class="{menu_class}">
-    <b>القائمة</b><br><br>
-    • إعدادات<br>
-    • تغيير الثيم<br>
-    • حفظ المحادثة<br>
-    • مسح المحادثة<br>
-    • معلومات التطبيق<br>
-</div>
-""", unsafe_allow_html=True)
-
-# ─── إعدادات الصفحة ───
 st.set_page_config(page_title=" ", page_icon="", layout="wide")
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -110,7 +49,55 @@ client = OpenAI(api_key=API_KEY)
 def get_current_date():
     return datetime.now().strftime("%A، %d %B %Y")
 
-# ─── المحادثة ───
+top_col1, top_col2, top_col3 = st.columns([0.1, 0.8, 0.1])
+
+with top_col1:
+    if st.button("≡"):
+        st.session_state.menu_open = not st.session_state.menu_open
+
+with top_col3:
+    if st.button("+"):
+        st.session_state.messages = []
+        st.session_state.menu_open = False
+        st.rerun()
+
+if st.session_state.menu_open:
+    menu_box = st.container()
+    with menu_box:
+        st.markdown("""
+        <div style="
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
+            z-index: 9999;
+            width: 160px;
+            font-size: 15px;
+        ">
+        <b>القائمة</b><br><br>
+        """, unsafe_allow_html=True)
+
+        if st.button("إعدادات"):
+            st.info("✔ تم فتح الإعدادات")
+
+        if st.button("تغيير الثيم"):
+            st.info("✔ سيتم إضافة الثيم لاحقًا")
+
+        if st.button("حفظ المحادثة"):
+            st.success("✔ تم حفظ المحادثة")
+
+        if st.button("مسح المحادثة"):
+            st.session_state.messages = []
+            st.success("✔ تم مسح المحادثة")
+
+        if st.button("معلومات التطبيق"):
+            st.info("✔ هذا هو مساعد نبراس الذكي")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -118,12 +105,14 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# ─── مربع الكتابة ───
-if prompt := st.chat_input("اكتب سؤالك..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+prompt = st.chat_input("اكتب سؤالك...")
+
+if prompt:
+    full_prompt = f"اسأل نبراس: {prompt}\nAsk Nabras: {prompt}"
+    st.session_state.messages.append({"role": "user", "content": full_prompt})
 
     with st.chat_message("user"):
-        st.write(prompt)
+        st.write(full_prompt)
 
     with st.chat_message("assistant"):
         try:
@@ -137,7 +126,7 @@ if prompt := st.chat_input("اكتب سؤالك..."):
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": "أجب بجمل قصيرة."},
+                        {"role": "system", "content": "أنت مساعد نبراس الذكي. أجب بجمل قصيرة."},
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
