@@ -105,14 +105,13 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-prompt = st.chat_input("اكتب سؤالك...")
+prompt = st.chat_input("اسأل Nabras")
 
 if prompt:
-    full_prompt = f"اسأل نبراس: {prompt}\nAsk Nabras: {prompt}"
-    st.session_state.messages.append({"role": "user", "content": full_prompt})
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
-        st.write(full_prompt)
+        st.write(prompt)
 
     with st.chat_message("assistant"):
         try:
