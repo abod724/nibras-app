@@ -1,8 +1,18 @@
 import streamlit as st
 from openai import OpenAI
 from datetime import datetime
+import time
 
-# ─── إخفاء الأيقونات ───
+# ─── تأثير الكتابة المتقطعة ───
+def typewriter(text):
+    placeholder = st.empty()
+    displayed = ""
+    for char in text:
+        displayed += char
+        placeholder.write(displayed)
+        time.sleep(0.01)
+
+# ─── عناصر أعلى الصفحة ───
 st.markdown("""
 <style>
     [data-testid="stChatMessageAvatarUser"],
@@ -24,14 +34,32 @@ st.markdown("""
         line-height: 1.6 !important;
     }
 </style>
+
+<!-- القائمة المنسدلة يمين فوق -->
+<div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+    <select style="padding: 6px; font-size: 14px;">
+        <option>اختر موضوعاً</option>
+        <option>الذكاء الاصطناعي</option>
+        <option>الصحة</option>
+        <option>الرياضة</option>
+        <option>التاريخ</option>
+    </select>
+</div>
+
+<!-- زر محادثة جديدة يسار فوق -->
+<div style="position: fixed; top: 10px; left: 10px; z-index: 9999;">
+    <button onclick="location.reload()" style="
+        padding: 8px 14px;
+        background-color: #f0f0f0;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    ">محادثة جديدة</button>
+</div>
 """, unsafe_allow_html=True)
 
-st.set_page_config(
-    page_title=" ",
-    page_icon="",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title=" ", page_icon="", layout="wide")
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
@@ -43,33 +71,18 @@ client = OpenAI(api_key=API_KEY)
 def get_current_date():
     return datetime.now().strftime("%A، %d %B %Y")
 
-# ─── الشريط الجانبي ───
-with st.sidebar:
-    st.markdown("### ⚙️ الإعدادات")
-    if st.button("➕ محادثة جديدة", use_container_width=True):
-        st.session_state.messages = [
-            {"role": "system", "content": "أنت مساعد ذكي ومحدث. أجب بجمل قصيرة (حد أقصى 3 جمل)."},
-            {"role": "assistant", "content": f"مرحباً! اليوم هو {get_current_date()}."}
-        ]
-        st.rerun()
-    st.divider()
-    st.caption(f"📅 التاريخ اليوم: {get_current_date()}")
-
 # ─── المحادثة ───
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "أنت مساعد ذكي ومحدث. أجب بجمل قصيرة."},
-        {"role": "assistant", "content": f"مرحباً! اليوم هو {get_current_date()}."}
-    ]
+    st.session_state.messages = []
 
 for msg in st.session_state.messages:
-    if msg["role"] != "system":
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
 # ─── مربع الكتابة ───
 if prompt := st.chat_input("اكتب سؤالك..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
+
     with st.chat_message("user"):
         st.write(prompt)
 
@@ -77,7 +90,7 @@ if prompt := st.chat_input("اكتب سؤالك..."):
         try:
             if "تاريخ" in prompt or "اليوم" in prompt:
                 reply = f"اليوم هو {get_current_date()}."
-                st.write(reply)
+                typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
@@ -85,7 +98,7 @@ if prompt := st.chat_input("اكتب سؤالك..."):
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": "أنت مساعد ذكي ومحدث. أجب بجمل قصيرة."},
+                        {"role": "system", "content": "أجب بجمل قصيرة."},
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
@@ -94,7 +107,7 @@ if prompt := st.chat_input("اكتب سؤالك..."):
                 )
 
                 reply = response.output_text
-                st.write(reply)
+                typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
 
         except Exception as e:
