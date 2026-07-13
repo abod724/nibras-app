@@ -118,9 +118,16 @@ if prompt:
     with st.chat_message("assistant"):
         try:
 
+            # ⭐ تعريف نبراس
+            if ("من انت" in prompt) or ("عرف بنفسك" in prompt) or ("وش انت" in prompt) or ("من تكون" in prompt):
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
             # ⭐ رد ثابت: من برمجك؟
             if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
-                reply = "برمجني أبو مشعل المطيري."
+                reply = "برمجني أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
