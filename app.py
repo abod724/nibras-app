@@ -34,7 +34,34 @@ st.markdown("""
         font-size: 15px !important;
         line-height: 1.6 !important;
     }
+
+    .input-icons {
+        position: fixed;
+        bottom: 75px;
+        right: 15px;
+        z-index: 9999;
+        display: flex;
+        gap: 10px;
+    }
+
+    .icon-btn {
+        background: #f0f0f0;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        border: none;
+    }
 </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="input-icons">
+    <form action="" method="post">
+        <button class="icon-btn" name="voice">🎤</button>
+        <button class="icon-btn" name="upload">+</button>
+    </form>
+</div>
 """, unsafe_allow_html=True)
 
 st.set_page_config(page_title=" ", page_icon="", layout="wide")
@@ -104,6 +131,14 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
+
+uploaded_image = st.file_uploader("", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+
+if uploaded_image:
+    st.image(uploaded_image)
+    st.session_state.messages.append({"role": "user", "content": "📷 تم رفع صورة"})
+    with st.chat_message("user"):
+        st.write("📷 تم رفع صورة")
 
 prompt = st.chat_input("اسأل Nabras")
 
