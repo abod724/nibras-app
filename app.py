@@ -12,7 +12,11 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
-# ─── عناصر أعلى الصفحة ───
+# ─── حالة القائمة ───
+if "menu_open" not in st.session_state:
+    st.session_state.menu_open = False
+
+# ─── تنسيقات عامة ───
 st.markdown("""
 <style>
     [data-testid="stChatMessageAvatarUser"],
@@ -33,32 +37,78 @@ st.markdown("""
         font-size: 15px !important;
         line-height: 1.6 !important;
     }
-</style>
 
-<!-- القائمة المنسدلة يمين فوق -->
-<div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
-    <select style="padding: 6px; font-size: 14px;">
-        <option>اختر موضوعاً</option>
-        <option>الذكاء الاصطناعي</option>
-        <option>الصحة</option>
-        <option>الرياضة</option>
-        <option>التاريخ</option>
-    </select>
-</div>
+    /* حركة الانزلاق للقائمة */
+    .menu-box {
+        position: fixed;
+        top: 50px;
+        right: 10px;
+        background: #ffffff;
+        padding: 12px;
+        border-radius: 8px;
+        box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
+        z-index: 9999;
+        width: 160px;
+        font-size: 15px;
+        transform: translateY(-20px);
+        opacity: 0;
+        transition: all 0.3s ease-in-out;
+    }
+    .menu-box.show {
+        transform: translateY(0px);
+        opacity: 1;
+    }
 
-<!-- زر محادثة جديدة يسار فوق -->
-<div style="position: fixed; top: 10px; left: 10px; z-index: 9999;">
-    <button onclick="location.reload()" style="
-        padding: 8px 14px;
+    /* زر ≡ */
+    .menu-btn {
+        padding: 6px 10px;
+        font-size: 20px;
         background-color: #f0f0f0;
         border: none;
         border-radius: 6px;
-        font-size: 14px;
         cursor: pointer;
-    ">محادثة جديدة</button>
+    }
+
+    /* زر + */
+    .new-chat-btn {
+        padding: 6px 10px;
+        font-size: 20px;
+        background-color: #f0f0f0;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+</style>
+
+<!-- زر المنسدلة (≡) -->
+<div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+    <button class="menu-btn" onclick="fetch('/toggle_menu')">≡</button>
+</div>
+
+<!-- زر محادثة جديدة (+) -->
+<div style="position: fixed; top: 10px; left: 10px; z-index: 9999;">
+    <button class="new-chat-btn" onclick="location.reload()">+</button>
 </div>
 """, unsafe_allow_html=True)
 
+# نقطة نهاية لتغيير حالة القائمة
+st.experimental_connection("toggle_menu", lambda: st.session_state.update(menu_open=not st.session_state.menu_open))
+
+# ─── القائمة المنسدلة مع حركة الانزلاق ───
+menu_class = "menu-box show" if st.session_state.menu_open else "menu-box"
+
+st.markdown(f"""
+<div class="{menu_class}">
+    <b>القائمة</b><br><br>
+    • إعدادات<br>
+    • تغيير الثيم<br>
+    • حفظ المحادثة<br>
+    • مسح المحادثة<br>
+    • معلومات التطبيق<br>
+</div>
+""", unsafe_allow_html=True)
+
+# ─── إعدادات الصفحة ───
 st.set_page_config(page_title=" ", page_icon="", layout="wide")
 
 API_KEY = st.secrets.get("OPENAI_API_KEY")
