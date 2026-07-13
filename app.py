@@ -11,6 +11,11 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
+def get_current_dates():
+    now = datetime.now()
+    gregorian = now.strftime("%A، %d %B %Y")
+    return gregorian
+
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
 
@@ -106,18 +111,6 @@ prompt = st.chat_input("اسأل Nabras")
 
 if prompt:
 
-    # ⭐ إصلاح مشكلة التاريخ المعلّق نهائيًا
-    st.session_state.messages = [
-        m for m in st.session_state.messages
-        if "اليوم" not in m["content"]
-        and "تاريخ" not in m["content"]
-        and "July" not in m["content"]
-        and "June" not in m["content"]
-        and "Monday" not in m["content"]
-        and "13" not in m["content"]
-        and "2026" not in m["content"]
-    ]
-
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
@@ -125,21 +118,27 @@ if prompt:
 
     with st.chat_message("assistant"):
         try:
-            with st.spinner("جاري البحث عن التاريخ الحقيقي..."):
-                response = client.responses.create(
-                    model="gpt-4o-mini",
-                    input=[
-                        {"role": "system", "content": "استخدم البحث بالويب لجلب التاريخ الصحيح."},
-                        *st.session_state.messages
-                    ],
-                    tools=[{"type": "web_search"}],
-                    max_output_tokens=200,
-                    temperature=0.2
-                )
-
-                reply = response.output_text
+            if ("اليوم" in prompt) or ("تاريخ" in prompt) or ("عن اليوم" in prompt):
+                gregorian = get_current_dates()
+                reply = f"اليوم هو {gregorian}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
+            else:
+                with st.spinner("جاري التفكير..."):
+                    response = client.responses.create(
+                        model="gpt-4o-mini",
+                        input=[
+                            {"role": "system", "content": "أنت مساعد نبراس الذكي. أجب بجمل قصيرة."},
+                            *st.session_state.messages
+                        ],
+                        tools=[{"type": "web_search"}],
+                        max_output_tokens=200,
+                        temperature=0.3
+                    )
+
+                    reply = response.output_text
+                    typewriter(reply)
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
 
         except Exception as e:
             st.error(f"⚠️ خطأ: {str(e)}")
