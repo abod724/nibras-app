@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-from googlesearch import search as google_search
+from duckduckgo_search import DDGS
 from datetime import datetime
 
 st.set_page_config(page_title="نبراس 2026", page_icon="📅", layout="wide")
@@ -12,19 +12,25 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
-# ─── التاريخ الحقيقي ───
 def get_current_date():
     return datetime.now().strftime("%A، %d %B %Y")
 
-# ─── البحث في الويب ───
+# ─── بحث بالويب (يعمل 100%) ───
 def search_web(query):
     try:
-        results = list(google_search(query, num_results=3, lang="ar", stop=3))
-        return "\n".join([f"• {r}" for r in results])
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=3))
+        if not results:
+            return ""
+        context = ""
+        for r in results:
+            title = r.get("title", "")
+            body = r.get("body", "")
+            context += f"• {title}: {body[:200]}...\n"
+        return context.strip()
     except Exception as e:
         return ""
 
-# ─── الشريط الجانبي ───
 with st.sidebar:
     st.markdown("### ⚙️ الإعدادات")
     if st.button("➕ محادثة جديدة", use_container_width=True):
@@ -34,10 +40,9 @@ with st.sidebar:
         ]
         st.rerun()
     st.divider()
-    enable_search = st.toggle("🌐 بحث في الويب", value=True)
+    st.toggle("🌐 بحث في الويب", value=True, key="enable_search", disabled=False)
     st.caption(f"📅 التاريخ اليوم: {get_current_date()}")
 
-# ─── المحادثة ───
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": "أنت نبراس، مساعد ذكي ومحدث. أجب بحد أقصى 3 جمل."},
@@ -49,7 +54,6 @@ for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-# ─── مربع الكتابة ───
 if prompt := st.chat_input("اكتب سؤالك..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -57,20 +61,17 @@ if prompt := st.chat_input("اكتب سؤالك..."):
 
     with st.chat_message("assistant"):
         try:
-            # ─── جاوب عن التاريخ مباشرة ───
             if "تاريخ" in prompt or "اليوم" in prompt:
                 reply = f"اليوم هو {get_current_date()}."
                 st.write(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ─── بحث في الويب ───
             search_context = ""
-            if enable_search:
+            if st.session_state.enable_search:
                 with st.spinner("🌐 جاري البحث..."):
                     search_context = search_web(prompt)
 
-            # ─── بناء التعليمات ───
             system_prompt = "أنت نبراس، مساعد ذكي ومحدث. أجب بحد أقصى 3 جمل."
             if search_context:
                 system_prompt += f"\n\n📌 معلومات محدثة من البحث:\n{search_context}"
@@ -78,7 +79,6 @@ if prompt := st.chat_input("اكتب سؤالك..."):
             messages = [{"role": "system", "content": system_prompt}]
             messages.extend(st.session_state.messages)
 
-            # ─── رد متقطع ───
             stream = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
