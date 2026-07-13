@@ -2,12 +2,6 @@ import streamlit as st
 from openai import OpenAI
 from datetime import datetime
 import time
-import pytz  # ← إضافة هذه المكتبة لتحديد المنطقة الزمنية
-
-# ─── دالة التاريخ (تقرأ من جهازك بتوقيتك) ───
-def get_real_date():
-    tz = pytz.timezone('Asia/Riyadh')  # غيّر إلى منطقتك إذا لزم الأمر
-    return datetime.now(tz).strftime("%A، %d %B %Y")
 
 def typewriter(text):
     placeholder = st.empty()
@@ -16,6 +10,10 @@ def typewriter(text):
         displayed += char
         placeholder.write(displayed)
         time.sleep(0.01)
+
+def get_real_date():
+    now = datetime.now()
+    return now.strftime("%A، %d %B %Y")
 
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
@@ -108,9 +106,10 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-prompt = st.chat_input("اسأل نبراس")
+prompt = st.chat_input("اسأل Nabras")
 
 if prompt:
+
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
@@ -118,7 +117,16 @@ if prompt:
 
     with st.chat_message("assistant"):
         try:
-            if "اليوم" in prompt or "تاريخ" in prompt:
+
+            # ⭐ رد ثابت: من برمجك؟
+            if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
+                reply = "برمجني أبو مشعل المطيري."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
+            # ⭐ إصلاح التاريخ
+            if ("اليوم" in prompt) or ("تاريخ" in prompt) or ("عن اليوم" in prompt):
                 reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
