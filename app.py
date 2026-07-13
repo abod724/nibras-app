@@ -34,32 +34,8 @@ st.markdown("""
         font-size: 15px !important;
         line-height: 1.6 !important;
     }
-
-    .input-icons {
-        position: fixed;
-        bottom: 75px;
-        right: 15px;
-        z-index: 9999;
-        display: flex;
-        gap: 10px;
-    }
-
-    .icon-btn {
-        background: #f0f0f0;
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 18px;
-        cursor: pointer;
-        border: none;
-    }
 </style>
 """, unsafe_allow_html=True)
-
-icon_col1, icon_col2 = st.columns([0.1, 0.1])
-with icon_col1:
-    upload_image = st.file_uploader("", type=["png","jpg","jpeg"], label_visibility="collapsed")
-with icon_col2:
-    record_audio = st.audio_input("")
 
 st.set_page_config(page_title=" ", page_icon="", layout="wide")
 
@@ -128,17 +104,6 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
-
-if upload_image:
-    st.image(upload_image)
-    st.session_state.messages.append({"role": "user", "content": "📷 صورة مرفوعة"})
-    with st.chat_message("user"):
-        st.write("📷 صورة مرفوعة")
-
-if record_audio:
-    st.session_state.messages.append({"role": "user", "content": "🎤 تم تسجيل صوت"})
-    with st.chat_message("user"):
-        st.write("🎤 تم تسجيل صوت")
 
 prompt = st.chat_input("اسأل Nabras")
 
