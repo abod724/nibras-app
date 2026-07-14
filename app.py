@@ -154,23 +154,23 @@ if prompt:
                 reply = "أنا نبراس، مساعد ذكي أرد باختصار ووضوح."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                return
+                st.stop()
 
             # من برمجك؟
             if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
                 reply = "برمجني أبو مشعل المطيري."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                return
+                st.stop()
 
             # نبذة
             if ("عطني نبذه" in prompt) or ("عطني نبذة" in prompt) or ("نبذه عنك" in prompt):
                 reply = "أنا مساعد ذكاء اصطناعي أقدم لك معلومات مختصرة وواضحة."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                return
+                st.stop()
 
-            # ⭐ نظام التاريخ الجديد (بسيط وواضح)
+            # ⭐ نظام التاريخ الجديد
             explicit_date = (
                 "وش اليوم" in prompt or
                 "كم التاريخ" in prompt or
@@ -184,7 +184,7 @@ if prompt:
                 reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                return
+                st.stop()
 
             # الرد الطبيعي المختصر
             with st.spinner("جاري التفكير..."):
@@ -195,8 +195,8 @@ if prompt:
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
-                    max_output_tokens=80,   # تقليل الاستهلاك
-                    temperature=0.2         # ردود مختصرة وثابتة
+                    max_output_tokens=60,
+                    temperature=0.2
                 )
 
                 reply = response.output_text
