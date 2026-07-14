@@ -156,21 +156,21 @@ if prompt:
 
             # تعريف نبراس
             if ("من انت" in prompt) or ("عرف بنفسك" in prompt) or ("وش انت" in prompt) or ("من تكون" in prompt):
-                reply = "أنا نبراس، مساعد ذكي أرد باختصار ووضوح."
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
             # من برمجك؟
             if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
-                reply = "برمجني أبو مشعل المطيري."
+                reply = "برمجني أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
             # نبذة
             if ("عطني نبذه" in prompt) or ("عطني نبذة" in prompt) or ("نبذه عنك" in prompt):
-                reply = "أنا مساعد ذكاء اصطناعي أقدم لك معلومات مختصرة وواضحة."
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
@@ -191,17 +191,17 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # الرد الطبيعي المختصر
+            # الرد الطبيعي
             with st.spinner("جاري التفكير..."):
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": "أجب بجمل قصيرة جدًا، واضحة، مباشرة، بدون تفاصيل إضافية."},
+                        {"role": "system", "content": "أنت مساعد نبراس الذكي. أجب بجمل قصيرة."},
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
-                    max_output_tokens=60,
-                    temperature=0.2
+                    max_output_tokens=200,
+                    temperature=0.3
                 )
 
                 reply = response.output_text
