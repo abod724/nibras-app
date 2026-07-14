@@ -151,24 +151,24 @@ if prompt:
 
             # تعريف نبراس
             if ("من انت" in prompt) or ("عرف بنفسك" in prompt) or ("وش انت" in prompt) or ("من تكون" in prompt):
-                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+                reply = "أنا نبراس، مساعد ذكي أرد باختصار ووضوح."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+                return
 
             # من برمجك؟
             if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
-                reply = "برمجني أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+                reply = "برمجني أبو مشعل المطيري."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+                return
 
             # نبذة
             if ("عطني نبذه" in prompt) or ("عطني نبذة" in prompt) or ("نبذه عنك" in prompt):
-                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+                reply = "أنا مساعد ذكاء اصطناعي أقدم لك معلومات مختصرة وواضحة."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+                return
 
             # ⭐ نظام التاريخ الجديد (بسيط وواضح)
             explicit_date = (
@@ -184,19 +184,19 @@ if prompt:
                 reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+                return
 
-            # الرد الطبيعي
+            # الرد الطبيعي المختصر
             with st.spinner("جاري التفكير..."):
                 response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": "أنت مساعد نبراس الذكي. أجب بجمل قصيرة."},
+                        {"role": "system", "content": "أجب بجمل قصيرة جدًا، واضحة، مباشرة، بدون تفاصيل إضافية."},
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
-                    max_output_tokens=200,
-                    temperature=0.3
+                    max_output_tokens=80,   # تقليل الاستهلاك
+                    temperature=0.2         # ردود مختصرة وثابتة
                 )
 
                 reply = response.output_text
