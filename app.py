@@ -170,7 +170,7 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ⭐ فلترة التاريخ الذكية
+            # ⭐ نظام التاريخ الجديد (بسيط وواضح)
             explicit_date = (
                 "وش اليوم" in prompt or
                 "كم التاريخ" in prompt or
@@ -180,31 +180,8 @@ if prompt:
                 "اليوم كم" in prompt
             )
 
-            contains_date_word = ("اليوم" in prompt or "تاريخ" in prompt)
-
-            context_words = (
-                "مباراة" in prompt or
-                "مثل اليوم" in prompt or
-                "وش صار اليوم" in prompt or
-                "عن اليوم" in prompt or
-                "وش عندهم اليوم" in prompt or
-                "وش عندك اليوم" in prompt
-            )
-
             if explicit_date:
                 reply = f"اليوم هو {get_real_date()}."
-                typewriter(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
-
-            elif contains_date_word and not explicit_date and context_words:
-                reply = "يبدو أنك تتحدث عن حدث أو شيء مرتبط باليوم، وليس عن التاريخ نفسه."
-                typewriter(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
-
-            elif contains_date_word and not explicit_date:
-                reply = "إذا كنت تريد معرفة التاريخ أو اليوم، اطلب ذلك بشكل صريح مثل: (وش اليوم؟)"
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
