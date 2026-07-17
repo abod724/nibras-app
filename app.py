@@ -5,7 +5,7 @@ from openai import OpenAI
 import requests
 
 # ============================
-# 1) إعدادات المفاتيح والمحركات
+# إعداد المفاتيح
 # ============================
 
 OPENAI_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -15,7 +15,7 @@ openai_client = OpenAI(api_key=OPENAI_KEY)
 groq_client = Groq(api_key=GROQ_KEY)
 
 # ============================
-# 2) اختيار موديلات Groq الجديدة
+# اختيار موديلات Groq الجديدة
 # ============================
 
 def get_latest_groq_model():
@@ -43,23 +43,7 @@ def get_latest_groq_model():
 latest_model = get_latest_groq_model()
 
 # ============================
-# 3) دالة البحث بالويب
-# ============================
-
-def web_search(query):
-    serp_key = st.secrets.get("SERPAPI_API_KEY")
-    if not serp_key:
-        return "لا يوجد مفتاح بحث ويب."
-    url = f"https://serpapi.com/search?q={query}&engine=google&api_key={serp_key}"
-    data = requests.get(url).json()
-    results = data.get("organic_results", [])
-    text = ""
-    for r in results[:5]:
-        text += f"- {r.get('title')}: {r.get('snippet')}\n"
-    return text if text else "لا توجد نتائج."
-
-# ============================
-# 4) دالة الكتابة المتدرجة
+# دالة الكتابة المتدرجة
 # ============================
 
 def typewriter(text):
@@ -71,7 +55,7 @@ def typewriter(text):
         time.sleep(0.01)
 
 # ============================
-# 5) واجهة Streamlit
+# واجهة Streamlit
 # ============================
 
 st.set_page_config(page_title="Nabras", layout="wide")
@@ -86,7 +70,7 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
 
 # ============================
-# 6) استقبال الرسائل
+# استقبال الرسائل
 # ============================
 
 prompt = st.chat_input("اسأل Nabras")
@@ -101,10 +85,7 @@ if prompt:
     with st.chat_message("assistant"):
         try:
 
-            # ============================
-            # منع ذكر المؤسس أو المطور
-            # ============================
-
+            # منع ذكر المؤسس
             founder_keywords = [
                 "من اسسك", "مين اسسك", "من طورك", "مين طورك",
                 "من برمجك", "مين برمجك", "من جهتك", "وش جهتك",
@@ -119,21 +100,12 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ============================
-            # بحث ويب
-            # ============================
-
-            search_results = web_search(prompt)
-
-            # ============================
-            # الردود حسب المحرك
-            # ============================
-
+            # الرد حسب المحرك
             if engine == "OpenAI":
                 response = openai_client.responses.create(
                     model="gpt-4o-mini",
                     input=[
-                        {"role": "system", "content": f"استخدم نتائج البحث:\n{search_results}"},
+                        {"role": "system", "content": "اكتب ردًا واضحًا بدون تكرار."},
                         *st.session_state.messages
                     ],
                     max_output_tokens=200,
@@ -145,12 +117,7 @@ if prompt:
                 response = groq_client.chat.completions.create(
                     model=latest_model,
                     messages=[
-                        {"role": "system", "content": f"""
-استخدم نتائج البحث:
-{search_results}
-
-اكتب ردًا واضحًا، دقيقًا، بدون تكرار.
-                        """},
+                        {"role": "system", "content": "اكتب ردًا واضحًا بدون تكرار."},
                         *st.session_state.messages
                     ]
                 )
