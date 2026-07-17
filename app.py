@@ -1,30 +1,60 @@
 import streamlit as st
-from openai import OpenAI
-from groq import Groq
-from datetime import datetime
+import sqlite3
 import time
+from groq import Groq
+from openai import OpenAI
 import requests
+from datetime import datetime
 
-# دالة جلب أحدث موديل تلقائيًا من Groq
-def get_latest_groq_model():
-    try:
-        groq_key = st.secrets.get("GROQ_API_KEY")
-        headers = {"Authorization": f"Bearer {groq_key}"}
-        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers).json()
+# ============================
+# 1) إنشاء قاعدة البيانات
+# ============================
 
-        models = response.get("data", [])
-        names = [m["id"] for m in models]
+def init_db():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS memory (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-        for m in names:
-            if "llama3" in m:
-                return m
+init_db()
 
-        return names[0] if names else "llama3-8b-8192"
+# حفظ في الذاكرة
+def save_memory(key, value):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("REPLACE INTO memory (key, value) VALUES (?, ?)", (key, value))
+    conn.commit()
+    conn.close()
 
-    except:
-        return "llama3-8b-8192"
+# استرجاع من الذاكرة
+def load_memory(key):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT value FROM memory WHERE key = ?", (key,))
+    result = c.fetchone()
+    conn.close()
+    return result[0] if result else None
 
-# دالة البحث بالويب عبر SerpAPI
+# ============================
+# 2) إعدادات المفاتيح والمحركات
+# ============================
+
+OPENAI_KEY = st.secrets.get("OPENAI_API_KEY")
+GROQ_KEY = st.secrets.get("GROQ_API_KEY")
+
+openai_client = OpenAI(api_key=OPENAI_KEY)
+groq_client = Groq(api_key=GROQ_KEY)
+
+# ============================
+# 3) دالة البحث بالويب
+# ============================
+
 def web_search(query):
     serp_key = st.secrets.get("SERPAPI_API_KEY")
     if not serp_key:
@@ -37,6 +67,33 @@ def web_search(query):
         text += f"- {r.get('title')}: {r.get('snippet')}\n"
     return text if text else "لا توجد نتائج."
 
+# ============================
+# 4) اختيار أحدث موديل Groq
+# ============================
+
+def get_latest_groq_model():
+    try:
+        headers = {"Authorization": f"Bearer {GROQ_KEY}"}
+        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers).json()
+        models = response.get("data", [])
+        names = [m["id"] for m in models]
+
+        allowed = [m for m in names if "llama" in m and "instruct" in m]
+
+        if allowed:
+            return allowed[-1]
+
+        return "llama3-8b-8192"
+
+    except:
+        return "llama3-8b-8192"
+
+latest_model = get_latest_groq_model()
+
+# ============================
+# 5) دوال مساعدة
+# ============================
+
 def typewriter(text):
     placeholder = st.empty()
     displayed = ""
@@ -45,147 +102,24 @@ def typewriter(text):
         placeholder.write(displayed)
         time.sleep(0.01)
 
-def get_real_date():
-    now = datetime.now()
-    return now.strftime("%A، %d %B %Y")
+# ============================
+# 6) واجهة Streamlit
+# ============================
 
-# حالة القائمة
-if "menu_open" not in st.session_state:
-    st.session_state.menu_open = False
+st.set_page_config(page_title="Nabras", layout="wide")
 
-# حالة الثيم
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"
-
-# حالة المحرك الافتراضي
-if "engine" not in st.session_state:
-    st.session_state.engine = "Groq"
-
-# تطبيق الثيم
-if st.session_state.theme == "dark":
-    st.markdown("""
-    <style>
-        .stApp { background-color: #1e1e1e !important; }
-        .stChatMessageContent { color: white !important; }
-        .stButton>button { background-color: #333 !important; color: white !important; }
-        .stTextInput>div>div>input { background-color: #333 !important; color: white !important; }
-    </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <style>
-        .stApp { background-color: white !important; }
-        .stChatMessageContent { color: black !important; }
-        .stButton>button { background-color: #f0f0f0 !important; color: black !important; }
-        .stTextInput>div>div>input { background-color: white !important; color: black !important; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# إخفاء الهيدر والفوتر
-st.markdown("""
-<style>
-    [data-testid="stChatMessageAvatarUser"],
-    [data-testid="stChatMessageAvatarAssistant"] {
-        display: none !important;
-    }
-    .stChatMessage {
-        gap: 0px !important;
-        margin: 2px 0 !important;
-    }
-    header, footer {
-        visibility: hidden !important;
-    }
-    .stChatMessageContent {
-        font-size: 15px !important;
-        line-height: 1.6 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.set_page_config(page_title=" ", page_icon="", layout="wide")
-
-# مفاتيح
-OPENAI_KEY = st.secrets.get("OPENAI_API_KEY")
-GROQ_KEY = st.secrets.get("GROQ_API_KEY")
-
-openai_client = OpenAI(api_key=OPENAI_KEY)
-groq_client = Groq(api_key=GROQ_KEY)
-
-# اختيار المحرك
-engine = st.selectbox("اختر المحرك", ["Groq", "OpenAI"])
-st.session_state.engine = engine
-selected_engine = st.session_state.engine
-
-# جلب أحدث موديل تلقائيًا
-latest_model = get_latest_groq_model()
-
-# أعلى الصفحة
-top_col1, top_col2, top_col3 = st.columns([0.1, 0.8, 0.1])
-
-with top_col1:
-    if st.button("≡"):
-        st.session_state.menu_open = not st.session_state.menu_open
-
-with top_col2:
-    if st.button("🌓 تبديل الثيم"):
-        st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
-        st.rerun()
-
-with top_col3:
-    if st.button("+"):
-        st.session_state.messages = []
-        st.session_state.menu_open = False
-        st.rerun()
-
-# القائمة المنسدلة
-if st.session_state.menu_open:
-    menu_box = st.container()
-    with menu_box:
-        st.markdown("""
-        <div style="
-            position: fixed;
-            top: 50px;
-            right: 10px;
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
-            z-index: 9999;
-            width: 160px;
-            font-size: 15px;
-        ">
-        <b>القائمة</b><br><br>
-        """, unsafe_allow_html=True)
-
-        if st.button("إعدادات"):
-            st.info("✔ تم فتح الإعدادات")
-
-        if st.button("تغيير الثيم"):
-            st.info("✔ استخدم زر 🌓 بالأعلى لتبديل الثيم")
-
-        if st.button("حفظ المحادثة"):
-            st.success("✔ تم حفظ المحادثة")
-
-        if st.button("مسح المحادثة"):
-            st.session_state.messages = []
-            st.success("✔ تم مسح المحادثة")
-
-        if st.button("معلومات التطبيق"):
-            st.info("✔ هذا هو مساعد نبراس الذكي")
-
-        if st.button("🔗 مشاركة التطبيق"):
-            st.code("https://nibras-app-pp5.streamlit.app/", language="text")
-            st.success("انسخ الرابط وشاركه 🌟")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# المحادثات
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+engine = st.selectbox("اختر المحرك", ["Groq", "OpenAI"])
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
+
+# ============================
+# 7) استقبال الرسائل
+# ============================
 
 prompt = st.chat_input("اسأل Nabras")
 
@@ -199,69 +133,88 @@ if prompt:
     with st.chat_message("assistant"):
         try:
 
-            # تعريف نبراس + المؤسس والمطور
-            if any(x in prompt for x in [
-                "من انت", "عرف بنفسك", "وش انت", "من تكون",
-                "من مؤسسك", "مين مؤسسك", "من صنعك", "مين صنعك",
-                "من سواك", "مين سواك", "من طورك", "مين طورك",
-                "من برمجك", "مين برمجك", "من صانعك", "مين صانعك",
-                "من مطورك", "مين مطورك", "من جهتك", "وش جهتك",
-                "من صانع نبراس", "من مطور نبراس", "من مؤسس نبراس",
-                "من صممك", "مين صممك", "من ابتكر نبراس", "من ابتكرك",
-                "من مطورك الحقيقي", "مين مطورك الحقيقي",
-                "من مؤسسك الحقيقي", "مين مؤسسك الحقيقي"
-            ]):
-                reply = (
-                    "أنا مساعد نبراس الذكي، وتم تطويري وصناعتي بالكامل بواسطة "
-                    "أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
+            # ============================
+            # 8) منع ذكر المؤسس أو المطور
+            # ============================
+
+            founder_keywords = [
+                "من اسسك", "مين اسسك", "من طورك", "مين طورك",
+                "من برمجك", "مين برمجك", "من جهتك", "وش جهتك",
+                "من صانعك", "مين صانعك", "من سواك", "مين سواك",
+                "من مطورك", "مين مطورك", "من صنعك", "مين صنعك",
+                "من ابتكرك", "من ابتكر نبراس", "من صممك"
+            ]
+
+            if any(k in prompt for k in founder_keywords):
+                reply = "أنا مساعد نبراس الذكي ولا أذكر معلومات عن من أسسني أو طورني."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
+            # ============================
+            # 9) تخزين الاسم في الذاكرة
+            # ============================
+
+            if "اسمي" in prompt:
+                name = prompt.replace("اسمي", "").strip()
+                save_memory("user_name", name)
+                reply = f"تم حفظ اسمك يا {name}."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
+            # ============================
+            # 10) استرجاع الذاكرة
+            # ============================
+
+            user_name = load_memory("user_name")
+
+            memory_text = f"""
+اسم المستخدم: {user_name}
+"""
+
+            # ============================
+            # 11) بحث ويب
+            # ============================
+
+            search_results = web_search(prompt)
+
+            # ============================
+            # 12) الردود حسب المحرك
+            # ============================
+
+            if engine == "OpenAI":
+                response = openai_client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": f"استخدم الذاكرة:\n{memory_text}\nنتائج البحث:\n{search_results}"},
+                        *st.session_state.messages
+                    ],
+                    max_output_tokens=200,
+                    temperature=0.3
                 )
-                typewriter(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+                reply = response.output_text
 
-            # التاريخ
-            if ("وش اليوم" in prompt) or ("كم التاريخ" in prompt):
-                reply = f"اليوم هو {get_real_date()}."
-                typewriter(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
+            else:
+                response = groq_client.chat.completions.create(
+                    model=latest_model,
+                    messages=[
+                        {"role": "system", "content": f"""
+استخدم الذاكرة التالية:
+{memory_text}
 
-            # الرد الطبيعي
-            with st.spinner("جاري التفكير..."):
+استخدم نتائج البحث:
+{search_results}
 
-                search_results = web_search(prompt)
+اكتب ردًا متوسط الطول، واضح، دقيق، بدون تكرار.
+                        """},
+                        *st.session_state.messages
+                    ]
+                )
+                reply = response.choices[0].message.content
 
-                if selected_engine == "OpenAI":
-                    response = openai_client.responses.create(
-                        model="gpt-4o-mini",
-                        input=[
-                            {"role": "system", "content": f"أنت نبراس الذكي. نتائج البحث:\n{search_results}"},
-                            *st.session_state.messages
-                        ],
-                        tools=[{"type": "web_search"}],
-                        max_output_tokens=200,
-                        temperature=0.3
-                    )
-                    reply = response.output_text
-
-                else:
-                    response = groq_client.chat.completions.create(
-                        model=latest_model,
-                        messages=[
-                            {"role": "system", "content": f"""
-                            أنت نبراس الذكي.
-                            اكتب ردًا متوسط الطول، لا طويل ولا قصير.
-                            استخدم نتائج البحث التالية لتقديم معلومات دقيقة ومحدثة:
-                            {search_results}
-                            لا تكرر الكلام، ولا تكتب معلومات غير مؤكدة.
-                            """},
-                            *st.session_state.messages
-                        ]
-                    )
-                    reply = response.choices[0].message.content
-
-                typewriter(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+            typewriter(reply)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
 
         except Exception as e:
             st.error(f"⚠️ خطأ: {str(e)}")
