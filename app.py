@@ -52,7 +52,35 @@ openai_client = OpenAI(api_key=OPENAI_KEY)
 groq_client = Groq(api_key=GROQ_KEY)
 
 # ============================
-# 3) دالة البحث بالويب
+# 3) اختيار موديلات Groq الجديدة
+# ============================
+
+def get_latest_groq_model():
+    try:
+        headers = {"Authorization": f"Bearer {GROQ_KEY}"}
+        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers).json()
+        models = response.get("data", [])
+
+        allowed = [
+            m["id"] for m in models
+            if any(x in m["id"] for x in [
+                "llama3-8b-1m",
+                "llama3-70b-1m",
+                "llama3-70b-8192",
+                "mixtral",
+                "gemma2"
+            ])
+        ]
+
+        return allowed[-1] if allowed else "llama3-70b-8192"
+
+    except:
+        return "llama3-70b-8192"
+
+latest_model = get_latest_groq_model()
+
+# ============================
+# 4) دالة البحث بالويب
 # ============================
 
 def web_search(query):
@@ -66,29 +94,6 @@ def web_search(query):
     for r in results[:5]:
         text += f"- {r.get('title')}: {r.get('snippet')}\n"
     return text if text else "لا توجد نتائج."
-
-# ============================
-# 4) اختيار أحدث موديل Groq
-# ============================
-
-def get_latest_groq_model():
-    try:
-        headers = {"Authorization": f"Bearer {GROQ_KEY}"}
-        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers).json()
-        models = response.get("data", [])
-        names = [m["id"] for m in models]
-
-        allowed = [m for m in names if "llama" in m and "instruct" in m]
-
-        if allowed:
-            return allowed[-1]
-
-        return "llama3-8b-8192"
-
-    except:
-        return "llama3-8b-8192"
-
-latest_model = get_latest_groq_model()
 
 # ============================
 # 5) دوال مساعدة
@@ -206,7 +211,7 @@ if prompt:
 استخدم نتائج البحث:
 {search_results}
 
-اكتب ردًا متوسط الطول، واضح، دقيق، بدون تكرار.
+اكتب ردًا واضحًا، دقيقًا، بدون تكرار.
                         """},
                         *st.session_state.messages
                     ]
