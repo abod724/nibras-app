@@ -196,10 +196,9 @@ if prompt:
                 reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-                st.stop()
-
+   
             #  الطبيعي (يبحث في كل شيء)
-          with st.sالردpinner("جاري البحث..."):
+        ("جاري البحث..."):with st.spinner
     response = client.responses.create(
         model="gpt-4o-mini",
         input=[
@@ -223,6 +222,7 @@ if prompt:
                 reply = response.output_text
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-  
+               st.stop()
+
         except Exception as e:
             st.error(f"⚠️ خطأ: {str(e)}")
