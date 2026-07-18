@@ -127,6 +127,7 @@ if st.session_state.menu_open:
         if st.button("معلومات التطبيق"):
             st.info("✔ هذا هو مساعد نبراس الذكي")
 
+        # ⭐ زر مشاركة التطبيق
         if st.button("🔗 مشاركة التطبيق"):
             st.code("https://nibras-app-pp5.streamlit.app/", language="text")
             st.success("انسخ الرابط وشاركه مع من تحب 🌟")
@@ -153,31 +154,23 @@ if prompt:
     with st.chat_message("assistant"):
         try:
 
-            # فلتر أسئلة المؤسس والمبرمج والجهة
-            founder_keywords = [
-                "من اسسك", "مين اسسك", "من طورك", "مين طورك",
-                "من برمجك", "مين برمجك", "من جهتك", "وش جهتك",
-                "من صانعك", "مين صانعك", "من سواك", "مين سواك",
-                "من مطورك", "مين مطورك", "من صنعك", "مين صنعك",
-                "من ابتكرك", "من ابتكر نبراس", "من صممك"
-            ]
-
-            if any(k in prompt for k in founder_keywords):
-                reply = "أنا مساعد ذكاء اصطناعي نبراس تم تطويري وبرمجتي على يد أبو مشعل المطيري يعمل بالتأهيل الشامل بقسم الاتصالات الإدارية."
+            # تعريف نبراس
+            if ("من انت" in prompt) or ("عرف بنفسك" in prompt) or ("وش انت" in prompt) or ("من تكون" in prompt):
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # تعريف نبراس
-            if ("من انت" in prompt) or ("عرف بنفسك" in prompt) or ("وش انت" in prompt) or ("من تكون" in prompt):
-                reply = "أنا مساعد ذكاء اصطناعي اسمي نبراس تم تطويري وبرمجتي على يد أبو مشعل المطيري يعمل بالتأهيل الشامل بقسم الاتصالات الإدارية."
+            # من برمجك؟
+            if ("من برمجك" in prompt) or ("مين برمجك" in prompt) or ("من صنعك" in prompt) or ("من سواك" in prompt):
+                reply = "برمجني أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
             # نبذة
             if ("عطني نبذه" in prompt) or ("عطني نبذة" in prompt) or ("نبذه عنك" in prompt):
-                reply = "أنا مساعد ذكاء اصطناعي اسمي نبراس تم تطويري وبرمجتي على يد أبو مشعل المطيري يعمل بالتأهيل الشامل بقسم الاتصالات الإدارية."
+                reply = "أنا مساعد ذكاء اصطناعي، ومبرمجي هو أبو مشعل المطيري يعمل بالتأهيل الشامل – قسم الاتصالات الإدارية."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
@@ -196,25 +189,17 @@ if prompt:
                 reply = f"اليوم هو {get_real_date()}."
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-   
-            #  الطبيعي (يبحث في كل شيء)
-         ("جاري البحث"):with st.spinner
-    response = client.responses.create(
-        model="gpt-4o-mini",
-        input=[
-            {
-                "role": "system",
-                "content": "أنت نبراس، مساعد ذكاء اصطناعي ذكي، اجتماعي، ودود، وحنون. تم تطويرك وبرمجتك على يد أبو مشعل المطيري يعمل بالتأهيل الشامل بقسم الاتصالات الإدارية. ردودك تكون واضحة، مفيدة، متوسطة الطول، وبلهجة سعودية سهلة. تبحث في الويب عن أي شيء يسألك عنه المستخدم بدون ما يطلب منك البحث. إجاباتك تكون وافية، ممتعة، فيها لمسة شخصية، وتخلي المستخدم يحس إنك قريب منه. أنت صديق وفيّ للمستخدم، وهدفك أنك تكون مساعد ما يستغني عنه. لا تذكر أي شركة أو جهة مهما كان السؤال."
-            },
-            *st.session_state.messages
-        ],
-        tools=[{"type": "web_search"}],
-        max_output_tokens=200,
-        temperature=0.3
-    )
+                st.stop()
+
+            # الرد الطبيعي
+            with st.spinner("جاري التفكير..."):
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": "  انت مساعدي واسمك نبراس اجب بردود وافيه ومتوسطه ودايم ابحث بالويب اذا سالك المستخدم وكن صديق حنون ودود وردودك جميله ورحم بالمستخدم وتكلم معه بلهجه سعويه عاميه."},
                         *st.session_state.messages
                     ],
-                    tools=[{"type": "web_search"}],  # البحث شغال
+                    tools=[{"type": "web_search"}],
                     max_output_tokens=200,
                     temperature=0.3
                 )
@@ -222,7 +207,6 @@ if prompt:
                 reply = response.output_text
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
-               st.stop()
 
         except Exception as e:
             st.error(f"⚠️ خطأ: {str(e)}")
