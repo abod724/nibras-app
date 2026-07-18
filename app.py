@@ -200,7 +200,7 @@ if prompt:
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
-                    max_output_tokens=200,
+                    max_output_tokens=1000,
                     temperature=0.3
                 )
 
