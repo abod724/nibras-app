@@ -2,7 +2,6 @@ import streamlit as st
 from openai import OpenAI
 from datetime import datetime
 import time
-import re
 
 # ==================== قراءة ملف المعرفة ====================
 with open("knowledge.md", "r", encoding="utf-8") as f:
@@ -20,46 +19,6 @@ def typewriter(text):
 def get_real_date():
     now = datetime.now()
     return now.strftime("%A، %d %B %Y")
-
-# ==================== دالة تحديد الحاجة لبحث ويب (تعمل داخلياً فقط) ====================
-def needs_web_search(prompt):
-    prompt_clean = prompt.strip().lower()
-    
-    # ❌ لا تحتاج بحث
-    no_search_patterns = [
-        r"^(سلام|مرحبا|هاي|هلا|أهلا)",
-        r"كيف حالك|شلونك|شخبارك",
-        r"من أنت|مين أنت|شنو اسمك",
-        r"شكرا|مشكور|تسلم",
-        r"مع السلامة|باي|وداعا",
-        r"^(اكتب|صيغ|أعطني) (نص|رسالة|قصة|شعر|كلام)",
-        r"اشرح لي|علمني|ما هو تعريف",
-        r"حل مسألة|حل معادلة|احسب",
-    ]
-    for pattern in no_search_patterns:
-        if re.search(pattern, prompt_clean):
-            return False
-
-    # ✅ تحتاج بحث ويب (القرار داخلي فقط)
-    search_patterns = [
-        r"اليوم|هذا الأسبوع|هذا الشهر|هذه السنة|الآن|حاليا|آخر|أحدث|جديد|مؤخرا",
-        r"تاريخ اليوم|كم التاريخ|وش اليوم",
-        r"عام 202[4-9]|عام 203",
-        r"خبر|أخبار|ماذا حدث|حدث مؤخرا|حادث|كارثة|إطلاق|تصريح",
-        r"سعر|سعر اليوم|كم يساوي|كم قيمة|سوق|أسهم|عملة|صرف|ذهب|نفط|بتكوين",
-        r"طقس|حرارة|درجة الحرارة|مطر|رياح",
-        r"مباراة|نتيجة|جدول|دوري|كأس|أبطال|المنتخب",
-        r"فلم جديد|مسلسل جديد|موعد عرض|حلقة جديدة",
-        r"إحصاء|نسبة|عدد السكان|معدل|تقرير رسمي|بيانات",
-        r"موعد اختبار|موعد تسجيل|شروط القبول|تقديرات|نتائج الاختبارات",
-        r"ابحث لي|ابحث في|تفقد لي|شوف لي|أريد معلومات عن|هل يوجد",
-    ]
-    
-    for pattern in search_patterns:
-        if re.search(pattern, prompt_clean):
-            return True
-
-    return False
 
 # ==================== حالة الجلسة ====================
 if "menu_open" not in st.session_state:
@@ -215,47 +174,42 @@ if prompt:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ✨ القرار الذكي الداخلي: بحث أم لا؟ (المستخدم ما يرى شيء من هذا)
-            use_web = needs_web_search(prompt)
-
-            # 📌 رسالة النظام مع اسم ملف المعرفة الرسمي
+            # 📌 رسالة النظام النهائية (مبسطة 100% بدون قيود)
             system_message = f"""
 اسم ملف المعرفة الأساسي الذي تعتمد عليه بالكامل هو: knowledge.md
 هذا الملف هو المرجع الأول والأعلى أولوية في كل الردود، قبل أي مصدر آخر.
-إذا وجدت الإجابة في ملف knowledge.md فلا تستخدم أي مصدر آخر أبداً.
-البحث في الويب يُستخدم فقط كمكمل إذا لم تجد المعلومة في الملف، أو إذا كانت المعلومة متغيرة وتحتاج لتحديث لحظي.
+إذا وجدت الإجابة الكاملة والصحيحة في ملف knowledge.md فلا تستخدم أي مصدر آخر أبداً، ورد بها مباشرة.
+
+--- القاعدة الوحيدة والبسيطة للبحث في الويب ---
+أداة البحث متاحة لك دائماً وبحرية تامة، وأنت تقرر بنفسك متى تستخدمها:
+✅ استخدم البحث في الويب فقط إذا شعرت بأن السؤال أي نوع كان يستدعي ذلك، وتحتاج لمعلومة حديثة أو متغيرة أو لست متأكداً منها تماماً حتى اليوم.
+❌ لا تستخدم البحث في الويب اطلاقاً إذا كانت الإجابة واضحة وموجودة في ملف المعرفة، أو كانت معلومة ثابتة، أو سوالف ومحادثة عامة لا تحتاج لتحديث.
+
+لا تخبر المستخدم أبداً بأنك قمت بالبحث أو لم تقم به، فقط رد عليه بشكل طبيعي كالإنسان تماماً.
 
 --- محتوى ملف المعرفة knowledge.md ---
 {knowledge}
             """
 
-            api_params = {
-                "model": "gpt-4o-mini",
-                "input": [
-                    {"role": "system", "content": system_message},
-                    *st.session_state.messages
-                ],
-                "max_output_tokens": 600,
-                "temperature": 0.7
-            }
-
-            # 🚀 تفعيل البحث داخلياً فقط لو احتجنا له (بدون أي إشارة خارجية)
-            if use_web:
-                api_params["tools"] = [{
-                    "type": "web_search",
-                    "search_context_size": "low",
-                    "user_location": {
-                        "type": "approximate",
-                        "country": "SA",
-                    }
-                }]
-
-            # ✅ الرسالة الموحدة والطبيعية لكل شيء
-            spinner_text = "جاري التفكير..."
-
-            # ⭐ استدعاء الـ API
-            with st.spinner(spinner_text):
-                response = client.responses.create(**api_params)
+            # ✨ أداة البحث موجودة دائماً، والقرار كله للنموذج متى يستخدمها
+            with st.spinner("جاري التفكير..."):
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": system_message},
+                        *st.session_state.messages
+                    ],
+                    tools=[{
+                        "type": "web_search",
+                        "search_context_size": "low",
+                        "user_location": {
+                            "type": "approximate",
+                            "country": "SA",
+                        }
+                    }],
+                    max_output_tokens=600,
+                    temperature=0.7
+                )
 
                 reply = response.output_text
                 typewriter(reply)
