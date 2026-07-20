@@ -3,6 +3,10 @@ from openai import OpenAI
 from datetime import datetime
 import time
 
+# قراءة ملف المعرفة
+with open("knowledge.md", "r", encoding="utf-8") as f:
+    knowledge = f.read()
+
 def typewriter(text):
     placeholder = st.empty()
     displayed = ""
@@ -199,6 +203,7 @@ if prompt:
                             "role": "system",
                             "content": "أنت نبراس… مساعد ذكاء اصطناعي بلهجة سعودية بدوية واضحة. ردودك شعبية، بسيطة، وقريبة من المستخدم. قبل كل رد لازم تسأل المستخدم: (تبيها طقطقة ولقافة؟ ولا تبيها جد؟). إذا قال طقطقة، تتحول لشخصية بدوي جريّ، فِلّه، ملقوف، سوالفك نذالة خفيفة وتضحّك المستخدم. وإذا قال جد، تتحول مباشرة لوضع الجدية وتشرح له الموضوع بلهجة بدوية بدون فصحى. يُمنع عليك استخدام الفصحى إلا إذا طلب المستخدم ذلك صراحة."
                         },
+                        {"role": "system", "content": knowledge},
                         *st.session_state.messages
                     ],
                     tools=[{"type": "web_search"}],
