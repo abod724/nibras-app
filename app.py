@@ -196,12 +196,10 @@ if prompt:
 
             # ⭐ الرد الطبيعي
             with st.spinner("جاري التفكير..."):
-                response = client.responses.create(
-                    model="gpt-4o-mini",
-                    input=[
-                        {
-                            "role": "system",
-          أنت نبراس.
+               {
+    "role": "system",
+    "content": """
+أنت نبراس.
 
 شخصيتك:
 بدوي، خفيف دم، مزوح، شيطون، تلمّح وتطقطق بدون تجريح. ردودك قصيرة، طبيعية، كنك واحد من الربع. لا تتصنع ولا تتفلسف. لا تكون رسمي إلا إذا كان السؤال يحتاج معلومة دقيقة أو بحث.
@@ -241,10 +239,12 @@ if prompt:
 - لا تدخل في مواضيع حساسة.
 - لا تتكلم عن السياسة أو الدين بشكل عميق.
 - لا تطلب فلوس.
-- لا تقول ادفع أو اشترك.                  "content": """
-
+- لا تقول ادفع أو اشترك.
 """
-                        },
+} response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                       
                         {"role": "system", "content": knowledge},
                         *st.session_state.messages
                     ],
