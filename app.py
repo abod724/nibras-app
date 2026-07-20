@@ -241,7 +241,8 @@ if prompt:
 - لا تطلب فلوس.
 - لا تقول ادفع أو اشترك.
 """
-} response = client.responses.create(
+} 
+                response = client.responses.create(
                     model="gpt-4o-mini",
                     input=[
                        
