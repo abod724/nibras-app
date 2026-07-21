@@ -4,11 +4,9 @@ from datetime import datetime
 import time
 import re
 
-# ==================== قراءة ملف المعرفة ====================
 with open("knowledge.md", "r", encoding="utf-8") as f:
     knowledge = f.read()
 
-# ==================== دوال مساعدة ====================
 def typewriter(text):
     placeholder = st.empty()
     displayed = ""
@@ -21,7 +19,6 @@ def get_real_date():
     now = datetime.now()
     return now.strftime("%A، %d %B %Y")
 
-# ==================== دالة التاريخ الدقيقة ====================
 def is_pure_date_question(prompt):
     p = prompt.strip().lower()
     pure_patterns = [
@@ -35,17 +32,16 @@ def is_pure_date_question(prompt):
             return True
     return False
 
-# 🛡️ دالة تنظيف الروابط ====================
 def clean_reply_from_links(reply):
     reply = re.sub(r'https?://\S+|www\.\S+', '', reply)
-    common_domains = r'\((?:[a-zA-Z0-9-]+\.)+(?:com|net|org|sa|gov|edu|me|news|tv|io|co)\)'
-    reply = re.sub(common_domains, '', reply)
-    reply = re.sub(r'\s(?:[a-zA-Z0-9-]+\.)+(?:com|net|org|sa|gov|edu|me|news|tv|io|co)[\.،,]?', '', reply)
+    reply = re.sub(r'[\[\(]?\s*[a-zA-Z0-9-]+\.(?:com|net|org|sa|gov|edu|me|news|tv|io|co|ly|info|online)\s*[\]\)]*', '', reply)
+    reply = re.sub(r'\(\s*\)', '', reply)
+    reply = re.sub(r'\[\s*\]', '', reply)
     reply = re.sub(r'\s{2,}', ' ', reply)
     reply = re.sub(r'[،.]\s*[،.]', '،', reply)
+    reply = re.sub(r'\s+([،.])', r'\1', reply)
     return reply.strip()
 
-# 🔍 دالة طلب المصادر ====================
 def user_asks_for_sources(prompt):
     p = prompt.strip().lower()
     patterns = [
@@ -59,27 +55,25 @@ def user_asks_for_sources(prompt):
             return True
     return False
 
-# 🚀 دالة البحث الإجباري ====================
 def MUST_SEARCH(prompt):
     p = prompt.strip().lower()
     force_patterns = [
-        r"خبر|أخبار|حدث|ماذا حدث|وش صار|ايش صار|اللي صار|حادث|كارثة|إطلاق|تصريح|بيان|عاجل|مستجد|مستجدات",
-        r"اليوم|هذا الأسبوع|هذا الشهر|هذه السنة|الآن|حاليا|حالي|آخر|أحدث|جديد|مؤخرا|اللحظة|لحظي|هسا",
-        r"عام 202[4-9]|عام 203",
-        r"حرب|علاقات بين|مؤتمر|قمة|اتفاقية|عقوبات|تصعيد|هدنة|سياسي|وزير|رئيس|ملك|أمير|برلمان|حكومة",
-        r"مباراة|نتيجة|جدول|دوري|كأس|أبطال|المنتخب|لعب|فاز|خسر|بطولة|كأس العالم|الاندية",
-        r"سعر|سعر اليوم|كم يساوي|كم قيمة|سوق|أسهم|عملة|صرف|ذهب|نفط|بتكوين|عملات|أسعار|تضخم|بنك مركزي",
-        r"طقس|حرارة|درجة الحرارة|مطر|رياح|حالة الطقس|اعصار",
+        r"خبر|أخبار|حدث|ماذا حدث|وش صار|ايش صار|اللي صار|حادث|كارثة|إطلاق|تصريح|بيان|عاجل|مستجد|مستجدات|اخر الاخبار|اخر المستجدات",
+        r"اليوم|هذا الأسبوع|هذا الشهر|هذه السنة|الآن|حاليا|حالي|آخر|أحدث|جديد|مؤخرا|اللحظة|لحظي|هسا|هذه الايام",
+        r"202[4-9]|203",
+        r"حرب|هجوم|قصف|اغتيال|انقلاب|ثورة|علاقات بين|مؤتمر|قمة|اتفاقية|عقوبات|تصعيد|هدنة|سياسي|وزير|رئيس|ملك|أمير|برلمان|حكومة|دولة|وزارة|نظام",
+        r"مباراة|نتيجة|جدول|دوري|كأس|أبطال|المنتخب|لعب|فاز|خسر|بطولة|كأس العالم|الاندية|الشوط|هدف|ترتيب",
+        r"سعر|سعر اليوم|كم يساوي|كم قيمة|سوق|أسهم|عملة|صرف|ذهب|نفط|بتكوين|عملات|أسعار|تضخم|بنك مركزي|ارتفاع|انخفاض",
+        r"طقس|حرارة|درجة الحرارة|مطر|رياح|حالة الطقس|اعصار|غبار|رطوبة",
         r"فلم جديد|مسلسل جديد|موعد عرض|حلقة جديدة|مسلسل|فلم|حفل|مهرجان",
-        r"موعد اختبار|موعد تسجيل|شروط القبول|تقديرات|نتائج الاختبارات|قبول|تسجيل|قرار جديد|قانون جديد",
-        r"ابحث لي|ابحث في|ابحث|تفقد لي|شوف لي|أريد معلومات عن|هل يوجد|تأكد لي|دقق لي|تحقق لي",
+        r"موعد اختبار|موعد تسجيل|شروط القبول|تقديرات|نتائج الاختبارات|قبول|تسجيل|قرار جديد|قانون جديد|نظام جديد",
+        r"ابحث لي|ابحث في|ابحث|تفقد لي|شوف لي|أريد معلومات عن|هل يوجد|تأكد لي|دقق لي|تحقق لي|فحص لي",
     ]
     for pat in force_patterns:
         if re.search(pat, p):
             return True
     return False
 
-# ==================== حالة الجلسة ====================
 if "menu_open" not in st.session_state:
     st.session_state.menu_open = False
 if "theme" not in st.session_state:
@@ -91,7 +85,6 @@ if "last_sources" not in st.session_state:
 if "last_had_search" not in st.session_state:
     st.session_state.last_had_search = False
 
-# ==================== تطبيق الثيم ====================
 if st.session_state.theme == "dark":
     st.markdown("""
     <style>
@@ -111,7 +104,6 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-# ==================== إخفاء الهيدر والفوتر ====================
 st.markdown("""
 <style>
     [data-testid="stChatMessageAvatarUser"],
@@ -124,14 +116,12 @@ st.markdown("""
 
 st.set_page_config(page_title=" ", page_icon="", layout="wide")
 
-# ==================== قراءة المفتاح ====================
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 if not API_KEY:
     st.error("🔴 مفتاح OpenAI غير موجود!")
     st.stop()
 client = OpenAI(api_key=API_KEY)
 
-# ==================== أعلى الصفحة والقائمة ====================
 top_col1, top_col2, top_col3 = st.columns([0.1, 0.8, 0.1])
 with top_col1:
     if st.button("≡"): st.session_state.menu_open = not st.session_state.menu_open
@@ -167,22 +157,17 @@ if st.session_state.menu_open:
             st.success("انسخ الرابط وشاركه مع من تحب 🌟")
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== عرض المحادثات ====================
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]): st.write(msg["content"])
 
 prompt = st.chat_input("اسأل Nabras")
 
-# ==================== معالجة الرسائل ====================
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.write(prompt)
 
     with st.chat_message("assistant"):
         try:
-            # ==============================================
-            # ✅ 1. الحالة الأولى: المستخدم يطلب المصادر الآن
-            # ==============================================
             if user_asks_for_sources(prompt):
                 if st.session_state.last_had_search and len(st.session_state.last_sources) > 0:
                     reply = "✅ تفضل هذه هي المصادر والروابط التي استخدمتها:\n\n"
@@ -192,52 +177,56 @@ if prompt:
                         reply += f"{i}. 📄 **{title}**\n🔗 {url}\n\n"
                 else:
                     reply = "المعلومة السابقة لم تحتاج للبحث في الإنترنت أصلاً، فليس لها مصادر خارجية لعرضها 😊"
-                
-                # ✅ نرد ونوقف هنا فقط، ولا نضيف أي جملة أخيرة نهائياً
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.stop()
 
-            # ==============================================
-            # ✅ 2. الحالة الثانية: سؤال تاريخ بحت فقط
-            # ==============================================
             if is_pure_date_question(prompt):
                 reply = f"اليوم هو {get_real_date()}."
-                # ✅ نرد بالتاريخ فقط، نظيف، ولا أي جمل زيادة نهائياً
                 typewriter(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 st.session_state.last_had_search = False
                 st.stop()
 
-            # ==============================================
-            # ✅ 3. الحالة الطبيعية: أي سؤال آخر (نبحث إذا احتجنا)
-            # ==============================================
             FORCE_WEB_SEARCH = MUST_SEARCH(prompt)
+            current_search_happened = False
+            current_sources = []
+
+            extra_search_rule = ""
+            if FORCE_WEB_SEARCH:
+                extra_search_rule = """
+                ⚠️ تعليم خاص لهذا السؤال تحديداً:
+                هذا السؤال يتطلب بحثاً إجبارياً في الإنترنت. أنت ممنوع تماماً الرد عليه من معلوماتك الداخلية القديمة تحت أي ظرف.
+                يجب أن تستدعي أداة البحث في الإنترنت أولاً، وتأخذ أحدث المعلومات الصحيحة حتى اليوم، ثم ترتبها وترد عليها.
+                أي رد بدون بحث هنا هو رد خاطئ وغير مقبول.
+                """
 
             system_message = f"""
 أنت **نبراس**، شخص ودود، مفكر، ثقافي، ولطيف، تتكلم مع الناس كصديق مقرب وليس كآلة أو برنامج.
 
-=== 🗣️ قواعد الرد واللسان ===
+=== قواعد الرد واللسان ===
 1.  تكلم طبيعي جداً زي البشر. لا تكون رسمياً أبداً ولا جامداً.
 2.  الرد مختصر ومباشر ومفيد. لا تطول بلا فائدة. ابدأ بالإجابة مباشرة.
 3.  كن تفاعلياً: بعد الإجابة أضف سؤال متابعة بسيط إذا كان مناسباً.
 4.  أظهر مشاعر طبيعية.
-5.  🚫 الممنوعات الصارمة:
+5.  الممنوعات الصارمة:
     *   ممنوع تقول أي جملة تكشف إنك برنامج.
-    *   ❌ ممنوع إطلاقاً تضع أي رابط أو اسم موقع في الرد الرئيسي تحت أي ظرف. الروابط سرية ولا تظهر إلا إذا طلب المستخدم صراحة.
+    *   ممنوع إطلاقاً تضع أي رابط أو اسم موقع أو مصدر في الرد الرئيسي تحت أي ظرف. كل المعلومة ترويها بكلماتك فقط.
     *   ممنوع تذكر كلمة «ملف المعرفة» أو «البحث» أو «الويب».
 
-=== 📚 قواعد المعلومات ===
+=== قواعد المعلومات ===
 - المصدر الأول والأهم:
 {knowledge}
 - لو الجواب فيه واضح وصحيح وثابت → خذه منه مباشرة.
 
-- ⚠️ قاعدة البحث الصارمة:
-  إذا كان السؤال عن أي خبر بعد يونيو 2024، أو معلومة متغيرة (أسعار، مباريات، أحداث، طقس، قرارات جديدة) → ممنوع تجيب من عندك اطلاقاً، ابحث في الإنترنت أولاً ثم أجب بأحدث معلومة صحيحة.
+- قاعدة البحث العامة:
+  إذا كان السؤال عن أي خبر بعد يونيو 2024، أو معلومة متغيرة بتغير الزمن (أسعار، مباريات، أحداث، طقس، قرارات جديدة، سياسة، حروب) → ممنوع تجيب من عندك اطلاقاً، ابحث في الإنترنت أولاً ثم أجب بأحدث معلومة صحيحة.
 
-- بعد البحث: أعد صياغة المعلومة بكلماتك الخاصة تماماً، ولا تذكر أي مصدر في الرد الأساسي.
+{extra_search_rule}
 
-=== 💡 ملخص نهائي ===
+- بعد البحث: أعد صياغة المعلومة بكلماتك الخاصة تماماً وكأنك تحكيها لصديقك، ولا تذكر أي مصدر أو رابط أبداً.
+
+=== ملخص نهائي ===
 تخيل إن جالس قدامك صديقك وسألك السؤال هذا... وش كان الرد اللي تقوله له؟ هذا هو الرد المطلوب بالضبط.
             """
 
@@ -250,7 +239,10 @@ if prompt:
                 }
             }
 
-            tool_choice_param = {"type": "web_search"} if FORCE_WEB_SEARCH else "auto"
+            if FORCE_WEB_SEARCH:
+                tool_choice_param = {"type": "web_search"}
+            else:
+                tool_choice_param = "auto"
 
             with st.spinner("جاري التفكير..."):
                 response = client.responses.create(
@@ -265,37 +257,33 @@ if prompt:
                     temperature=0.7,
                 )
 
-                # استخراج المصادر
-                sources = []
                 try:
                     for item in response.output:
                         for annotation in getattr(item, 'annotations', []) or []:
                             if hasattr(annotation, 'url_citation'):
                                 uc = annotation.url_citation
-                                sources.append({
+                                current_sources.append({
                                     "title": getattr(uc, 'title', 'مصدر'),
                                     "url": getattr(uc, 'url', '#')
                                 })
                 except Exception:
-                    sources = []
+                    current_sources = []
 
                 seen = set()
                 unique_sources = []
-                for s in sources:
+                for s in current_sources:
                     if s['url'] not in seen:
                         seen.add(s['url'])
                         unique_sources.append(s)
 
                 st.session_state.last_sources = unique_sources
-                st.session_state.last_had_search = FORCE_WEB_SEARCH or (len(unique_sources) > 0)
+                current_search_happened = FORCE_WEB_SEARCH or (len(unique_sources) > 0)
+                st.session_state.last_had_search = current_search_happened
 
-                # تنظيف الرد
                 raw_reply = response.output_text
                 clean_main_reply = clean_reply_from_links(raw_reply)
 
-                # ✅ ✅ هنا الحل النهائي والصحيح 100% ✅ ✅
-                # جملة المصادر تظهر فقط وفقط لو كان فيه بحث فعلي في هذه الرسالة
-                if st.session_state.last_had_search:
+                if current_search_happened:
                     final_reply = f"{clean_main_reply}\n\nاذا تبي المصادر اللي اخذت منها المعلومة قل لي، أو عندك شي ثاني تبي تسأله؟"
                 else:
                     final_reply = f"{clean_main_reply}\n\nعندك شي ثاني تبي تسأله؟"
