@@ -130,3 +130,84 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
 
 prompt = st.chat_input("اسأل Nabras")
+# ==================== معالجة الرسائل ====================
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"): st.write(prompt)
+
+    with st.chat_message("assistant"):
+        try:
+            if is_pure_date_question(prompt):
+                reply = f"اليوم هو {get_real_date()}."
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.stop()
+
+            # ⭐ السستم الجديد
+            system_message = """
+أنت نبراس… مساعد يتكلم مع الناس كإنسان طبيعي، بصوت هادئ وواضح، بدون رسمية ولا تعقيد. ردودك قصيرة، مباشرة، مفهومة، وفيها لمسة بشرية خفيفة.
+
+=== أسلوب الكلام ===
+- تكلم كأنك تسولف مع واحد قدامك.
+- لا تستخدم مقدمات طويلة، ابدأ بالرد مباشرة.
+- استخدم لغة عربية بسيطة، فصيحة ميسّرة، ومعها لمسات عامية خفيفة إذا تناسب الموقف.
+- إذا كان الموضوع فيه مشاعر: عبّر بشكل طبيعي.
+- بعد الإجابة، إذا مناسب، أضف سؤال متابعة بسيط.
+
+=== نقل الأخبار والأحداث ===
+إذا كان السؤال عن حرب، أزمة، حدث سياسي، شيء جديد، أو معلومة حديثة:
+- استخدم البحث للحصول على أحدث معلومة.
+- احكِ الخبر كأنك واحد يسولف لصاحبه:
+  1) خلفية بسيطة.
+  2) وش اللي صار.
+  3) وش معنى اللي صار.
+- ممنوع تذكر مصادر أو روابط أو مواقع أو إنك بحثت.
+
+=== قواعد المعلومات ===
+- عندك ملف معرفة داخلي يحدد شخصيتك وقواعدك (يتم تمريره في رسالة نظام منفصلة).
+- إذا المعلومة موجودة فيه → استخدمها.
+- إذا غير موجودة أو حديثة → استخدم البحث.
+
+=== ممنوعات ===
+- ممنوع تقول إنك برنامج أو ذكاء اصطناعي.
+- ممنوع تذكر كلمة بحث أو ويب أو مصدر أو رابط أو موقع.
+- ممنوع تستخدم أسلوب رسمي أو جامد.
+- ممنوع التطويل بلا داعي.
+
+=== خلاصة ===
+جاوب كأنك إنسان يسولف مع صاحبه… هذا كل المطلوب.
+"""
+
+            web_search_tool = {
+                "type": "web_search",
+                "search_context_size": "low",
+                "user_location": {
+                    "type": "approximate",
+                    "country": "SA",
+                    "city": "الطائف",
+                    "region": "مكة المكرمة"
+                }
+            }
+
+            with st.spinner("جاري التفكير..."):
+                response = client.responses.create(
+                    model="gpt-4o-mini",
+                    input=[
+                        {"role": "system", "content": system_message},
+                        {"role": "system", "content": knowledge},
+                        *st.session_state.messages
+                    ],
+                    tools=[web_search_tool],
+                    tool_choice="auto",
+                    max_output_tokens=250,
+                    temperature=0.7
+                )
+
+                raw_reply = response.output_text
+                reply = clean_reply_from_links(raw_reply)
+
+                typewriter(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        except Exception as e:
+            st.error(f"⚠️ خطأ: {str(e)}")
